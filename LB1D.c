@@ -10,6 +10,7 @@
 #define V_min -1.0
 #define pi 3.141592654
 #define G 6.67408E-11
+#define FLOAT double
 
 float gauss(float pos, float vel);
 float * densidad(float **fase);
@@ -56,10 +57,10 @@ int main(){
   float *acc;
   acc=malloc(sizeof(float)*Nx);
   acc=acceleration(pot);
-  
-  for(i=0;i<Nx;i++){
+
+  /*for(i=0;i<Nx;i++){
     printf("%f %f %f \n", dens[i], pot[i], acc[i]);
-  }
+  }*/
 
   float ** phase_new;
   phase_new = malloc(sizeof(float *) * Nv);
@@ -69,12 +70,12 @@ int main(){
 
   phase_new=update(phase, acc, delt);
 
-  /*for(i=0; i<Nv; i++){
+  for(i=0; i<Nv; i++){
     for(j=0; j<Nx; j++){
       printf("%f  ", phase_new[i][j]);
     }
     printf("\n");
-  }*/
+  }
   return 0;
 }
 
@@ -108,7 +109,7 @@ float * potential(float *rho, float *V_prev){
   }
   for(j=0;j<2*Nx;j++){
     for(i=1;i<Nx-1;i++){
-      Va[i]=0.5*(V_temp[i-1]+V_temp[i+1]-4*pi*G*rho[i]*delx*delx);
+      Va[i]=0.5*(V_temp[i-1]+V_temp[i+1] - rho[i]*delx*delx);
     }
     for(i=0;i<Nx;i++){
       V_temp[i]=Va[i];
@@ -124,7 +125,7 @@ float * acceleration(float *Va){
   aceleracion=malloc(sizeof(float)*Nx);
   aceleracion[0]=0; aceleracion[Nx-1]=0;
   for(i=1;i<Nx-1;i++){
-    aceleracion[i]=(Va[i+1]-Va[i-1])/(2.0*delx);
+    aceleracion[i]=-(Va[i+1]-Va[i-1])/(2.0*delx);
   }
   return aceleracion;
 }
@@ -151,7 +152,7 @@ float ** update(float ** fase, float * azz, float deltat){
   for(i=0;i<Nv;i++){
     for(j=0;j<Nx;j++){
       v=V_min+i*delv;
-      x=L_min+j*deltat;
+      x=L_min+j*delx;
       v_new=v+deltat*azz[j];
       x_new=x+deltat*v_new;
       if(v_new > V_min && v_new < V_max && x_new > L_min && x_new < L_max){
