@@ -11,37 +11,37 @@
 #define pi 3.141592654
 #define G 6.67408E-11
 #define FLOAT double
-#define T 30
+#define T 200
 
-float gauss(float pos, float vel);
-float * densidad(float **fase);
-float * potential(float *rho, float *V_prev);
-float * acceleration(float *Va);
-float ** update(float ** fase, float * azz, float deltat);
+FLOAT gauss(FLOAT pos, FLOAT vel);
+FLOAT * densidad(FLOAT **fase);
+FLOAT * potential(FLOAT *rho, FLOAT *V_prev);
+FLOAT * acceleration(FLOAT *Va);
+FLOAT ** update(FLOAT ** fase, FLOAT * azz, FLOAT deltat);
 
 int main(){
 
   int i,j,k;
-  float L_max = L_min+L;
-  float V_max = V_min+V;
-  float delx = L/(Nx-1);
-  float delv = V/(Nv-1);
-  float delt = 0.01;
+  FLOAT L_max = L_min+L;
+  FLOAT V_max = V_min+V;
+  FLOAT delx = L/(Nx-1);
+  FLOAT delv = V/(Nv-1);
+  FLOAT delt = 0.1;
 
 
-  float **phase;
-  phase = malloc(sizeof(float *) * Nv);
+  FLOAT **phase;
+  phase = malloc(sizeof(FLOAT *) * Nv);
   for(i=0;i<Nv;i++){
-    phase[i]=malloc(sizeof(float)*Nx);
+    phase[i]=malloc(sizeof(FLOAT)*Nx);
   }
-  float *dens;
-  dens=malloc(sizeof(float)*Nx);
-  float *acc;
-  acc=malloc(sizeof(float)*Nx);
-  float *pot;
-  pot=malloc(sizeof(float)*Nx);
-  float *pot_new;
-  pot_new=malloc(sizeof(float)*Nx);
+  FLOAT *dens;
+  dens=malloc(sizeof(FLOAT)*Nx);
+  FLOAT *acc;
+  acc=malloc(sizeof(FLOAT)*Nx);
+  FLOAT *pot;
+  pot=malloc(sizeof(FLOAT)*Nx);
+  FLOAT *pot_new;
+  pot_new=malloc(sizeof(FLOAT)*Nx);
 
   for(i=0;i<Nv;i++){
     for(j=0;j<Nx;j++){
@@ -58,15 +58,15 @@ int main(){
     printf("%f %f %f \n", dens[i], pot[i], acc[i]);
   }*/
 
-  float ** phase_new;
-  phase_new = malloc(sizeof(float *) * Nv);
+  FLOAT ** phase_new;
+  phase_new = malloc(sizeof(FLOAT *) * Nv);
   for(i=0;i<Nv;i++){
-    phase_new[i]=malloc(sizeof(float) * Nx);
+    phase_new[i]=malloc(sizeof(FLOAT) * Nx);
   }
 
   for(i=0; i<Nv; i++){
     for(j=0; j<Nx; j++){
-      printf("%f  ", phase[i][j]);
+      printf("%lf  ", phase[i][j]);
     }
     printf("\n");
   }
@@ -84,11 +84,11 @@ int main(){
         phase[i][j]=phase_new[i][j];
       }
     }
-    for(i=0;i<Nx;i++){
+    for(i=1;i<Nx;i++){
       pot[i]=pot_new[i];
     }
 
-    if(k%1==0){
+    if(k%7==0){
       for(i=0; i<Nv; i++){
         for(j=0; j<Nx; j++){
           printf("%f  ", phase_new[i][j]);
@@ -100,13 +100,13 @@ int main(){
   return 0;
 }
 
-float gauss(float pos, float vel){
+FLOAT gauss(FLOAT pos, FLOAT vel){
   return 4*exp(-(pow(pos,2)+pow(vel,2))/0.08);
 }
 
-float * densidad(float **fase){
-  float * rho;
-  rho=malloc(sizeof(float)*Nx);
+FLOAT * densidad(FLOAT **fase){
+  FLOAT * rho;
+  rho=malloc(sizeof(FLOAT)*Nx);
   int i, j;
   for(i=0;i<Nx;i++){
     for(j=0;j<Nv;j++){
@@ -116,21 +116,21 @@ float * densidad(float **fase){
   return rho;
 }
 
-float * potential(float *rho, float *V_prev){
+FLOAT * potential(FLOAT *rho, FLOAT *V_prev){
 
-  float delx = L/(Nx-1);
+  FLOAT delx = L/(Nx-1);
   int i,j;
-  float *Va;
-  float *V_temp;
-  Va=malloc(sizeof(float)*Nx);
-  V_temp=malloc(sizeof(float)*Nx);
+  FLOAT *Va;
+  FLOAT *V_temp;
+  Va=malloc(sizeof(FLOAT)*Nx);
+  V_temp=malloc(sizeof(FLOAT)*Nx);
   Va[0]=0; Va[Nx-1]=0;
   for(i=0;i<Nx;i++){
     V_temp[i]=V_prev[i];
   }
-  for(j=0;j<2*Nx;j++){
+  for(j=0;j<Nx*Nx/4;j++){
     for(i=1;i<Nx-1;i++){
-      Va[i]=0.5*(V_temp[i-1]+V_temp[i+1] - rho[i]*delx*delx);
+      Va[i]=0.5*(V_temp[i-1]+V_temp[i+1] - 0.005*rho[i]*delx*delx);
     }
     for(i=0;i<Nx;i++){
       V_temp[i]=Va[i];
@@ -139,11 +139,11 @@ float * potential(float *rho, float *V_prev){
   return Va;
 }
 
-float * acceleration(float *Va){
+FLOAT * acceleration(FLOAT *Va){
   int i;
-  float delx = L/(Nx-1);
-  float *aceleracion;
-  aceleracion=malloc(sizeof(float)*Nx);
+  FLOAT delx = L/(Nx-1);
+  FLOAT *aceleracion;
+  aceleracion=malloc(sizeof(FLOAT)*Nx);
   aceleracion[0]=0; aceleracion[Nx-1]=0;
   for(i=1;i<Nx-1;i++){
     aceleracion[i]=-(Va[i+1]-Va[i-1])/(2.0*delx);
@@ -151,18 +151,18 @@ float * acceleration(float *Va){
   return aceleracion;
 }
 
-float ** update(float ** fase, float * azz, float deltat){
+FLOAT ** update(FLOAT ** fase, FLOAT * azz, FLOAT deltat){
   int i,j;
   int i_v_new, j_x_new;
-  float x, v, x_new, v_new;
-  float L_max = L_min+L;
-  float V_max = V_min+V;
-  float delx = L/(Nx-1);
-  float delv = V/(Nv-1);
-  float **phase_temp;
-  phase_temp = malloc(sizeof(float *) * Nv);
+  FLOAT x, v, x_new, v_new;
+  FLOAT L_max = L_min+L;
+  FLOAT V_max = V_min+V;
+  FLOAT delx = L/(Nx-1);
+  FLOAT delv = V/(Nv-1);
+  FLOAT **phase_temp;
+  phase_temp = malloc(sizeof(FLOAT *) * Nv);
   for(i=0;i<Nv;i++){
-    phase_temp[i]=malloc(sizeof(float) * Nx);
+    phase_temp[i]=malloc(sizeof(FLOAT) * Nx);
   }
   for(i=0;i<Nv;i++){
     for(j=0;j<Nx;j++){

@@ -5,10 +5,6 @@ import imageio #Para hacer el gif
 import os #Para crear directorio temporal
 import shutil #Para eliminar directorio temporal
 
-
-Nx=1024
-inp=np.genfromtxt('output.txt', delimiter='  ')
-size=len(inp[:,0])/Nx
 """fig=plt.figure()
 ax=plt.axes()
 plt.imshow(inp, cmap='RdPu', extent=[-1,1,-1,1]) #extent[x,x,y,y]
@@ -19,11 +15,15 @@ plt.title(r'Espacio de fase $\Delta t$ despues del inicio')
 plt.savefig('dt.pdf', format='pdf')
 plt.close()"""
 
+Nx=1024
+inp=np.genfromtxt('output.txt', delimiter='  ')
+size=len(inp[:,0])/Nx
+
 os.mkdir('temp')
 
 with imageio.get_writer('./movimiento.gif', mode='I') as writer:
     for i in range(size):
-        fig=plt.figure()
+        fig=plt.figure(figsize=(8,8))
         ax=plt.axes()
         plt.xlabel(r'Posicion($x$)')
         plt.ylabel(r'Velocidad($v$)')
