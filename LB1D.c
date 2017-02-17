@@ -11,6 +11,7 @@
 #define pi 3.141592654
 #define G 6.67408E-11
 #define FLOAT double
+#define T 30
 
 float gauss(float pos, float vel);
 float * densidad(float **fase);
@@ -33,6 +34,14 @@ int main(){
   for(i=0;i<Nv;i++){
     phase[i]=malloc(sizeof(float)*Nx);
   }
+  float *dens;
+  dens=malloc(sizeof(float)*Nx);
+  float *acc;
+  acc=malloc(sizeof(float)*Nx);
+  float *pot;
+  pot=malloc(sizeof(float)*Nx);
+  float *pot_new;
+  pot_new=malloc(sizeof(float)*Nx);
 
   for(i=0;i<Nv;i++){
     for(j=0;j<Nx;j++){
@@ -40,23 +49,10 @@ int main(){
     }
   }
 
-  float *dens;
-  dens=malloc(sizeof(float)*Nx);
-  dens=densidad(phase);
-
-  float *pot_ini;
-  pot_ini=malloc(sizeof(float)*Nx);
   for(i=0;i<Nx;i++){
-    pot_ini[i]=0.0;
+    pot[i]=0.0;
+    pot_new[i]=0.0;
   }
-
-  float *pot;
-  pot=malloc(sizeof(float)*Nx);
-  pot=potential(dens, pot_ini);
-
-  float *acc;
-  acc=malloc(sizeof(float)*Nx);
-  acc=acceleration(pot);
 
   /*for(i=0;i<Nx;i++){
     printf("%f %f %f \n", dens[i], pot[i], acc[i]);
@@ -65,16 +61,41 @@ int main(){
   float ** phase_new;
   phase_new = malloc(sizeof(float *) * Nv);
   for(i=0;i<Nv;i++){
-    phase_new[i]=malloc(sizeof(float)*Nx);
+    phase_new[i]=malloc(sizeof(float) * Nx);
   }
-
-  phase_new=update(phase, acc, delt);
 
   for(i=0; i<Nv; i++){
     for(j=0; j<Nx; j++){
-      printf("%f  ", phase_new[i][j]);
+      printf("%f  ", phase[i][j]);
     }
     printf("\n");
+  }
+
+  for(k=0;k<T;k++){
+
+    dens=densidad(phase);
+    pot_new=potential(dens, pot);
+    acc=acceleration(pot_new);
+
+    phase_new=update(phase, acc, delt);
+
+    for(i=0;i<Nv;i++){
+      for(j=0;j<Nx;j++){
+        phase[i][j]=phase_new[i][j];
+      }
+    }
+    for(i=0;i<Nx;i++){
+      pot[i]=pot_new[i];
+    }
+
+    if(k%1==0){
+      for(i=0; i<Nv; i++){
+        for(j=0; j<Nx; j++){
+          printf("%f  ", phase_new[i][j]);
+        }
+        printf("\n");
+      }
+    }
   }
   return 0;
 }
