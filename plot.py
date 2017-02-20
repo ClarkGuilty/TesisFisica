@@ -28,7 +28,7 @@ with imageio.get_writer('./movimiento.gif', mode='I') as writer:
         plt.xlabel(r'Posicion($x$)')
         plt.ylabel(r'Velocidad($v$)')
         plt.title('Espacio de fase')
-        plt.imshow(inp[i*Nx:(i+1)*Nx,:], cmap='RdPu', extent=[-1,1,-1,1])
+        plt.imshow(inp[i*Nx:(i+1)*Nx,:], extent=[-1,1,-1,1], cmap='BuPu') #cmap='RdPu')
         plt.colorbar()
         plt.savefig('./temp/'+str(i)+'phase.png', format='png')
         plt.close()
