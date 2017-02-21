@@ -1,11 +1,11 @@
-inizio.pdf : plot.py output.txt
+inizio.pdf : plot.py Constantes.txt acc_dat.txt dens_dat.txt pot_dat.txt phase_dat.txt
 	python plot.py
 
-output.txt : a.out
-	./a.out > output.txt
+Constantes.txt acc_dat.txt dens_dat.txt pot_dat.txt phase_dat.txt : a.out
+	./a.out
 
 a.out : LB1D.c
 	gcc -lm LB1D.c
 
 clean:
-	rm -fr a.out output.txt inizio.pdf temp/
+	rm -fr a.out inizio.pdf  Constantes.txt acc_dat.txt dens_dat.txt pot_dat.txt phase_dat.txt temp/
