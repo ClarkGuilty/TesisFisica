@@ -115,7 +115,6 @@ FLOAT * potential(FLOAT *rho, FLOAT *V_prev){
   FLOAT *V_temp;
   Va=malloc(sizeof(FLOAT)*Nx);
   V_temp=malloc(sizeof(FLOAT)*Nx);
-  //Va[0]=0; Va[Nx-1]=0;
   for(i=0;i<Nx;i++){
     V_temp[i]=V_prev[i];
   }
@@ -167,9 +166,15 @@ FLOAT * update(FLOAT * fase, FLOAT * azz, FLOAT deltat){
       x=L_min+j*delx;
       v_new=v+deltat*azz[j];
       x_new=x+deltat*v_new;
-      if(v_new > V_min && v_new < V_max && x_new > L_min && x_new < L_max){
+      if(v_new >= V_min && v_new <= V_max){ //&& x_new > L_min && x_new < L_max){
         i_v_new= (int) round((v_new-V_min)/delv);
         j_x_new= (int) round((x_new-L_min)/delx);
+        if(x_new < L_min){
+          j_x_new = Nx-j_x_new-1;
+        }
+        else if(x_new > L_max){
+          j_x_new = j_x_new%Nx;
+        }
         phase_temp[ndx(i_v_new, j_x_new)]=phase_temp[ndx(i_v_new, j_x_new)]+fase[ndx(i,j)];
       }
     }
