@@ -8,4 +8,4 @@ a.out : LB1D.c
 	gcc -lm LB1D.c
 
 clean:
-	rm -f a.out output.txt inizio.pdf
+	rm -fr a.out output.txt inizio.pdf temp/

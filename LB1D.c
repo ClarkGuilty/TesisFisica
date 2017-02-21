@@ -4,16 +4,17 @@
 
 #define Nx 1024
 #define Nv 1024
-#define L 2.0
-#define L_min -1.0
+#define L 1.0
+#define L_min -0.5
 #define V 2.0
 #define V_min -1.0
 #define pi 3.141592654
 #define G 6.67408E-11
 #define FLOAT double
-#define T 30
+#define T 1
 
-FLOAT gauss(FLOAT pos, FLOAT vel);
+FLOAT gauss(FLOAT pos, FLOAT vel, FLOAT amp, FLOAT sigma);
+FLOAT jeans(FLOAT pos, FLOAT vel, FLOAT rho, FLOAT amp, FLOAT sig, int n);
 FLOAT * densidad(FLOAT *fase);
 FLOAT * potential(FLOAT *rho, FLOAT *V_prev);
 FLOAT * acceleration(FLOAT *Va);
@@ -43,7 +44,8 @@ int main(){
 
   for(i=0;i<Nv;i++){
     for(j=0;j<Nx;j++){
-      phase[ndx(i,j)]=gauss(L_min+j*delx, V_min+i*delv);
+      //phase[ndx(i,j)]=gauss(L_min+j*delx, V_min+i*delv, 4.0, 0.08);
+      phase[ndx(i,j)]=jeans(L_min+j*delx, V_min+i*delv, 5.0, 0.01, 0.5, 2);
     }
   }
 
@@ -91,8 +93,14 @@ int main(){
   return 0;
 }
 
-FLOAT gauss(FLOAT pos, FLOAT vel){
-  return 4*exp(-(pow(pos,2)+pow(vel,2))/0.08);
+FLOAT gauss(FLOAT pos, FLOAT vel, FLOAT amp, FLOAT sigma){
+  return amp*exp(-(pow(pos,2)+pow(vel,2))/sigma);
+}
+
+FLOAT jeans(FLOAT pos, FLOAT vel, FLOAT rho, FLOAT amp, FLOAT sig, int n){
+  FLOAT k0 = 2.0*pi/L;
+  FLOAT k = n*k0;
+  return rho/(pow(2*pi*sig*sig,0.5))*exp(-pow(vel,2)/(2*sig*sig))*(1+amp*cos(k*pos));
 }
 
 FLOAT * densidad(FLOAT *fase){
@@ -166,14 +174,14 @@ FLOAT * update(FLOAT * fase, FLOAT * azz, FLOAT deltat){
       x=L_min+j*delx;
       v_new=v+deltat*azz[j];
       x_new=x+deltat*v_new;
-      if(v_new >= V_min && v_new <= V_max){ //&& x_new > L_min && x_new < L_max){
+      if(v_new >= V_min && v_new <= V_max){ // && x_new >= L_min && x_new <= L_max){
         i_v_new= (int) round((v_new-V_min)/delv);
         j_x_new= (int) round((x_new-L_min)/delx);
         if(x_new < L_min){
-          j_x_new = Nx-j_x_new-1;
+          j_x_new = (int) Nx+j_x_new-1;
         }
         else if(x_new > L_max){
-          j_x_new = j_x_new%Nx;
+          j_x_new = (int) j_x_new%Nx;
         }
         phase_temp[ndx(i_v_new, j_x_new)]=phase_temp[ndx(i_v_new, j_x_new)]+fase[ndx(i,j)];
       }
