@@ -11,7 +11,7 @@
 #define pi 3.141592654
 #define G 6.67408E-11
 #define FLOAT double
-#define T 50
+#define T 30
 
 FLOAT gauss(FLOAT pos, FLOAT vel);
 FLOAT * densidad(FLOAT *fase);
@@ -115,7 +115,7 @@ FLOAT * potential(FLOAT *rho, FLOAT *V_prev){
   FLOAT *V_temp;
   Va=malloc(sizeof(FLOAT)*Nx);
   V_temp=malloc(sizeof(FLOAT)*Nx);
-  Va[0]=0; Va[Nx-1]=0;
+  //Va[0]=0; Va[Nx-1]=0;
   for(i=0;i<Nx;i++){
     V_temp[i]=V_prev[i];
   }
@@ -123,6 +123,8 @@ FLOAT * potential(FLOAT *rho, FLOAT *V_prev){
     for(i=1;i<Nx-1;i++){
       Va[i]=0.5*(V_temp[i-1]+V_temp[i+1] - 0.005*rho[i]*delx*delx);
     }
+    Va[0]=0.5*(V_temp[Nx-1]+V_temp[1] - 0.005*rho[i]*delx*delx);
+    Va[Nx-1]=0.5*(V_temp[Nx-2]+V_temp[0] - 0.005*rho[i]*delx*delx);
     for(i=0;i<Nx;i++){
       V_temp[i]=Va[i];
     }
