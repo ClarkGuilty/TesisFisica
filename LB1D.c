@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <complex.h>
+#include <fftw3.h>
 
 #define Nx 1024
 #define Nv 1024
@@ -11,14 +13,17 @@
 #define pi 3.141592654
 #define G 6.67408E-11
 #define FLOAT double
-#define T 250
+#define T 10
+#define skip 1
+#define deltat 0.1
 
 FLOAT gauss(FLOAT pos, FLOAT vel, FLOAT amp, FLOAT sigma);
 FLOAT jeans(FLOAT pos, FLOAT vel, FLOAT rho, FLOAT amp, FLOAT sig, int n);
 FLOAT * densidad(FLOAT *fase);
-FLOAT * potential(FLOAT *rho, FLOAT *V_prev);
+FLOAT * potential(FLOAT *rho);
+FLOAT * potfourier(FLOAT *rho);
 FLOAT * acceleration(FLOAT *Va);
-FLOAT * update(FLOAT * fase, FLOAT * azz, FLOAT deltat);
+FLOAT * update(FLOAT * fase, FLOAT * azz);
 void printINFO(FLOAT * density, FILE * dens_file, FLOAT * azz, FILE * azz_file, FLOAT * potencial, FILE * pot_file, FLOAT * fase, FILE * fase_file);
 void printCONS();
 int ndx(int fila, int column);
@@ -29,9 +34,8 @@ int main(){
   int i,j,k;
   FLOAT L_max = L_min+L;
   FLOAT V_max = V_min+V;
-  FLOAT delx = L/(Nx-1);
+  FLOAT delx = L/(Nx);
   FLOAT delv = V/(Nv-1);
-  FLOAT delt = 0.1;
 
   FLOAT *phase;
   phase = malloc(sizeof(FLOAT)*Nx*Nv);
@@ -58,27 +62,24 @@ int main(){
   for(i=0;i<Nv;i++){
     for(j=0;j<Nx;j++){
       phase[ndx(i,j)]=gauss(L_min+j*delx, V_min+i*delv, 4.0, 0.08);
-      phase_new[ndx(i,j)]=phase[ndx(i,j)];
       //phase[ndx(i,j)]=jeans(L_min+j*delx, V_min+i*delv, 5.0, 0.01, 0.5, 2);
-    }
-  }
+      phase_new[ndx(i,j)]=phase[ndx(i,j)];
 
-  for(i=0;i<Nx;i++){
-    pot[i]=0.0;
-    pot_new[i]=0.0;
+    }
   }
 
   for(k=0;k<T;k++){
 
     dens=densidad(phase);
-    pot_new=potential(dens, pot);
+    //pot_new=potential(dens);
+    pot_new=potfourier(dens);
     acc=acceleration(pot_new);
 
-    if(k%7==0){
+    if(k%skip==0){
         printINFO(dens, dens_dat, acc, acc_dat, pot_new, pot_dat, phase, phase_dat);
     }
 
-    phase_new=update(phase, acc, delt);
+    phase_new=update(phase, acc);
 
     for(i=0;i<Nv;i++){
       for(j=0;j<Nx;j++){
@@ -111,7 +112,7 @@ FLOAT * densidad(FLOAT *fase){
   }
   return rho;
 }
-FLOAT * potential(FLOAT *rho, FLOAT *V_prev){
+FLOAT * potential(FLOAT *rho){
 
   FLOAT delx = L/(Nx-1);
   int i,j;
@@ -120,7 +121,7 @@ FLOAT * potential(FLOAT *rho, FLOAT *V_prev){
   Va=malloc(sizeof(FLOAT)*Nx);
   V_temp=malloc(sizeof(FLOAT)*Nx);
   for(i=0;i<Nx;i++){
-    V_temp[i]=V_prev[i];
+    V_temp[i]=0.0;
   }
   for(j=0;j<Nx*Nx/4;j++){
     for(i=1;i<Nx-1;i++){
@@ -134,6 +135,34 @@ FLOAT * potential(FLOAT *rho, FLOAT *V_prev){
   }
   return Va;
 }
+FLOAT * potfourier(FLOAT *rho){
+  int i;
+  FLOAT ks;
+  fftw_complex *rho_in, *rho_out, *rho_fin;
+  fftw_plan rho_plan;
+  rho_in=malloc(sizeof(fftw_complex)*Nx);
+  rho_out=malloc(sizeof(fftw_complex)*Nx);
+  rho_fin=malloc(sizeof(fftw_complex)*Nx);
+  rho_plan = fftw_plan_dft_1d(Nx, rho_in, rho_out, FFTW_FORWARD, FFTW_ESTIMATE);
+  for(i=0;i<Nx;i++){
+    rho_in[i]=rho[i];
+  }
+  fftw_execute(rho_plan);
+  for(i=0;i<Nx;i++){
+    ks=2*pi*i/L;
+    rho_out[i]=rho_out[i]/(-pow(ks,2));
+  }
+  fftw_destroy_plan(rho_plan);
+  rho_plan = fftw_plan_dft_1d(Nx, rho_out, rho_fin, FFTW_BACKWARD, FFTW_ESTIMATE);
+  fftw_execute(rho_plan);
+
+  FLOAT * res;
+  res=malloc(sizeof(FLOAT)*Nx);
+  for(i=0;i<Nx;i++){
+    res[i]=creal(rho_fin[i]);
+  }
+  return res;
+}
 FLOAT * acceleration(FLOAT *Va){
   int i;
   FLOAT delx = L/(Nx-1);
@@ -145,7 +174,7 @@ FLOAT * acceleration(FLOAT *Va){
   }
   return aceleracion;
 }
-FLOAT * update(FLOAT * fase, FLOAT * azz, FLOAT deltat){
+FLOAT * update(FLOAT * fase, FLOAT * azz){
   int i,j;
   int i_v_new, j_x_new;
   FLOAT x, v, x_new, v_new;
@@ -203,5 +232,5 @@ void printINFO(FLOAT * density, FILE * dens_file, FLOAT * azz, FILE * azz_file, 
 void printCONS(){
   FILE *CONS;
   CONS=fopen("Constantes.txt", "w");
-  fprintf(CONS, " Nx= %d\n Nv= %d\n L= %lf\n L_min= %lf\n V= %lf\n V_min= %lf\n T= %d", Nx, Nv, L, L_min, V, V_min, T);
+  fprintf(CONS, " Nx= %d\n Nv= %d\n L= %lf\n L_min= %lf\n V= %lf\n V_min= %lf\n T= %d\n skip= %d\n deltat= %lf", Nx, Nv, L, L_min, V, V_min, T, skip, deltat);
 }
