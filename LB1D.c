@@ -13,8 +13,8 @@
 #define pi 3.141592654
 #define G 6.67408E-11
 #define FLOAT double
-#define T 10
-#define skip 1
+#define T 250
+#define skip 6
 #define deltat 0.1
 
 FLOAT gauss(FLOAT pos, FLOAT vel, FLOAT amp, FLOAT sigma);
@@ -71,8 +71,8 @@ int main(){
   for(k=0;k<T;k++){
 
     dens=densidad(phase);
-    pot_new=potential(dens);
-    //pot_new=potfourier(dens);
+    //pot_new=potential(dens);
+    pot_new=potfourier(dens);
     acc=acceleration(pot_new);
 
     if(k%skip==0){
@@ -155,12 +155,12 @@ FLOAT * potfourier(FLOAT *rho){
   rho_plan = fftw_plan_dft_1d(Nx, rho_out, rho_fin, FFTW_BACKWARD, FFTW_ESTIMATE);
   for(i=1;i<Nx;i++){
     ks=1/L*(FLOAT)i;
-    rho_out[i]=rho_out[i]/(Nx*(-pow(ks,2)));
+    rho_out[i]=rho_out[i]/(-pow(ks,2)*Nx);
   }
   fftw_execute(rho_plan);
 
   for(i=0;i<Nx;i++){
-    res[i]=creal(rho_fin[i]);
+    res[i]=creal(rho_fin[i]/(4*Nx));
   }
   return res;
 }
