@@ -71,8 +71,8 @@ int main(){
   for(k=0;k<T;k++){
 
     dens=densidad(phase);
-    //pot_new=potential(dens);
-    pot_new=potfourier(dens);
+    pot_new=potential(dens);
+    //pot_new=potfourier(dens);
     acc=acceleration(pot_new);
 
     if(k%skip==0){
@@ -138,26 +138,27 @@ FLOAT * potential(FLOAT *rho){
 FLOAT * potfourier(FLOAT *rho){
   int i;
   FLOAT ks;
+  FLOAT * res;
+  res=malloc(sizeof(FLOAT)*Nx);
   fftw_complex *rho_in, *rho_out, *rho_fin;
   fftw_plan rho_plan;
   rho_in=malloc(sizeof(fftw_complex)*Nx);
   rho_out=malloc(sizeof(fftw_complex)*Nx);
   rho_fin=malloc(sizeof(fftw_complex)*Nx);
   rho_plan = fftw_plan_dft_1d(Nx, rho_in, rho_out, FFTW_FORWARD, FFTW_ESTIMATE);
+
   for(i=0;i<Nx;i++){
     rho_in[i]=rho[i];
   }
   fftw_execute(rho_plan);
-  for(i=0;i<Nx;i++){
-    ks=2*pi*i/L;
-    rho_out[i]=rho_out[i]/(-pow(ks,2));
-  }
   fftw_destroy_plan(rho_plan);
   rho_plan = fftw_plan_dft_1d(Nx, rho_out, rho_fin, FFTW_BACKWARD, FFTW_ESTIMATE);
+  for(i=1;i<Nx;i++){
+    ks=1/L*(FLOAT)i;
+    rho_out[i]=rho_out[i]/(Nx*(-pow(ks,2)));
+  }
   fftw_execute(rho_plan);
 
-  FLOAT * res;
-  res=malloc(sizeof(FLOAT)*Nx);
   for(i=0;i<Nx;i++){
     res[i]=creal(rho_fin[i]);
   }
