@@ -13,8 +13,8 @@
 #define pi 3.141592654
 #define G 6.67408E-11
 #define FLOAT double
-#define T 250
-#define skip 6
+#define T 30
+#define skip 1
 #define deltat 0.1
 
 FLOAT gauss(FLOAT pos, FLOAT vel, FLOAT amp, FLOAT sigma);
@@ -24,9 +24,10 @@ FLOAT * potential(FLOAT *rho);
 FLOAT * potfourier(FLOAT *rho);
 FLOAT * acceleration(FLOAT *Va);
 FLOAT * update(FLOAT * fase, FLOAT * azz);
+int ndx(int fila, int column);
 void printINFO(FLOAT * density, FILE * dens_file, FLOAT * azz, FILE * azz_file, FLOAT * potencial, FILE * pot_file, FLOAT * fase, FILE * fase_file);
 void printCONS();
-int ndx(int fila, int column);
+FLOAT sinc(FLOAT x);
 
 int main(){
 
@@ -137,7 +138,9 @@ FLOAT * potential(FLOAT *rho){
 }
 FLOAT * potfourier(FLOAT *rho){
   int i;
-  FLOAT ks;
+  FLOAT Kx;
+  FLOAT kx;
+  FLOAT delx = L/(Nx);
   FLOAT * res;
   res=malloc(sizeof(FLOAT)*Nx);
   fftw_complex *rho_in, *rho_out, *rho_fin;
@@ -145,17 +148,19 @@ FLOAT * potfourier(FLOAT *rho){
   rho_in=malloc(sizeof(fftw_complex)*Nx);
   rho_out=malloc(sizeof(fftw_complex)*Nx);
   rho_fin=malloc(sizeof(fftw_complex)*Nx);
-  rho_plan = fftw_plan_dft_1d(Nx, rho_in, rho_out, FFTW_FORWARD, FFTW_ESTIMATE);
 
+  rho_plan = fftw_plan_dft_1d(Nx, rho_in, rho_out, FFTW_FORWARD, FFTW_ESTIMATE);
   for(i=0;i<Nx;i++){
     rho_in[i]=rho[i];
   }
   fftw_execute(rho_plan);
   fftw_destroy_plan(rho_plan);
+
   rho_plan = fftw_plan_dft_1d(Nx, rho_out, rho_fin, FFTW_BACKWARD, FFTW_ESTIMATE);
   for(i=1;i<Nx;i++){
-    ks=1/L*(FLOAT)i;
-    rho_out[i]=rho_out[i]/(-pow(ks,2)*Nx);
+    kx=1/L*(FLOAT)i;
+    Kx=kx*sinc(0.5*kx*delx);
+    rho_out[i]=rho_out[i]/(-pow(Kx,2)*Nx);
   }
   fftw_execute(rho_plan);
 
@@ -234,4 +239,10 @@ void printCONS(){
   FILE *CONS;
   CONS=fopen("Constantes.txt", "w");
   fprintf(CONS, " Nx= %d\n Nv= %d\n L= %lf\n L_min= %lf\n V= %lf\n V_min= %lf\n T= %d\n skip= %d\n deltat= %lf", Nx, Nv, L, L_min, V, V_min, T, skip, deltat);
+}
+FLOAT sinc(FLOAT x){
+  if (x==0){
+    return 1.0;
+  }
+  return sin(x)/x;
 }
