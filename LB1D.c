@@ -6,16 +6,22 @@
 
 #define Nx 1024
 #define Nv 1024
-#define L 2.0
-#define L_min -1.0
+#define L 2.0 //1.0 //2.0
+#define L_min -1.0// -0.5 //-1.0
 #define V 2.0
 #define V_min -1.0
 #define pi 3.141592654
 #define G 6.67408E-11
 #define FLOAT double
 #define T 30
-#define skip 1
+#define skip 3
 #define deltat 0.1
+
+FLOAT delx=L/(Nx-1);
+FLOAT delv=V/(Nv-1);
+FLOAT L_max = L_min+L;
+FLOAT V_max = V_min+V;
+int i,j,k;
 
 FLOAT gauss(FLOAT pos, FLOAT vel, FLOAT amp, FLOAT sigma);
 FLOAT jeans(FLOAT pos, FLOAT vel, FLOAT rho, FLOAT amp, FLOAT sig, int n);
@@ -32,11 +38,6 @@ FLOAT sinc(FLOAT x);
 int main(){
 
   printCONS();
-  int i,j,k;
-  FLOAT L_max = L_min+L;
-  FLOAT V_max = V_min+V;
-  FLOAT delx = L/(Nx);
-  FLOAT delv = V/(Nv-1);
 
   FLOAT *phase;
   phase = malloc(sizeof(FLOAT)*Nx*Nv);
@@ -59,7 +60,6 @@ int main(){
   FLOAT *pot_new;
   pot_new=malloc(sizeof(FLOAT)*Nx);
 
-
   for(i=0;i<Nv;i++){
     for(j=0;j<Nx;j++){
       phase[ndx(i,j)]=gauss(L_min+j*delx, V_min+i*delv, 4.0, 0.08);
@@ -75,7 +75,6 @@ int main(){
     //pot_new=potential(dens);
     pot_new=potfourier(dens);
     acc=acceleration(pot_new);
-
     if(k%skip==0){
         printINFO(dens, dens_dat, acc, acc_dat, pot_new, pot_dat, phase, phase_dat);
     }
@@ -87,10 +86,12 @@ int main(){
         phase[ndx(i,j)]=phase_new[ndx(i,j)];
       }
     }
+
     for(i=1;i<Nx;i++){
       pot[i]=pot_new[i];
     }
   }
+
   return 0;
 }
 
@@ -105,7 +106,6 @@ FLOAT jeans(FLOAT pos, FLOAT vel, FLOAT rho, FLOAT amp, FLOAT sig, int n){
 FLOAT * densidad(FLOAT *fase){
   FLOAT * rho;
   rho=malloc(sizeof(FLOAT)*Nx);
-  int i, j;
   for(i=0;i<Nx;i++){
     for(j=0;j<Nv;j++){
       rho[i]+=fase[ndx(j,i)];
@@ -114,9 +114,6 @@ FLOAT * densidad(FLOAT *fase){
   return rho;
 }
 FLOAT * potential(FLOAT *rho){
-
-  FLOAT delx = L/(Nx-1);
-  int i,j;
   FLOAT *Va;
   FLOAT *V_temp;
   Va=malloc(sizeof(FLOAT)*Nx);
@@ -137,10 +134,8 @@ FLOAT * potential(FLOAT *rho){
   return Va;
 }
 FLOAT * potfourier(FLOAT *rho){
-  int i;
   FLOAT Kx;
   FLOAT kx;
-  FLOAT delx = L/(Nx);
   FLOAT * res;
   res=malloc(sizeof(FLOAT)*Nx);
   fftw_complex *rho_in, *rho_out, *rho_fin;
@@ -157,21 +152,20 @@ FLOAT * potfourier(FLOAT *rho){
   fftw_destroy_plan(rho_plan);
 
   rho_plan = fftw_plan_dft_1d(Nx, rho_out, rho_fin, FFTW_BACKWARD, FFTW_ESTIMATE);
+  rho_out[0]=0.0;
   for(i=1;i<Nx;i++){
     kx=1/L*(FLOAT)i;
     Kx=kx*sinc(0.5*kx*delx);
-    rho_out[i]=rho_out[i]/(-pow(Kx,2)*Nx);
+    rho_out[i]=rho_out[i]/(-pow(Kx,2)*2*Nx);
   }
   fftw_execute(rho_plan);
 
   for(i=0;i<Nx;i++){
-    res[i]=creal(rho_fin[i]/(4*Nx));
+    res[i]=creal(rho_fin[i]/(2*Nx));
   }
   return res;
 }
 FLOAT * acceleration(FLOAT *Va){
-  int i;
-  FLOAT delx = L/(Nx-1);
   FLOAT *aceleracion;
   aceleracion=malloc(sizeof(FLOAT)*Nx);
   aceleracion[0]=0; aceleracion[Nx-1]=0;
@@ -181,13 +175,8 @@ FLOAT * acceleration(FLOAT *Va){
   return aceleracion;
 }
 FLOAT * update(FLOAT * fase, FLOAT * azz){
-  int i,j;
   int i_v_new, j_x_new;
   FLOAT x, v, x_new, v_new;
-  FLOAT L_max = L_min+L;
-  FLOAT V_max = V_min+V;
-  FLOAT delx = L/(Nx-1);
-  FLOAT delv = V/(Nv-1);
 
   FLOAT * phase_temp;
   phase_temp = malloc(sizeof(FLOAT)*Nv*Nv);
@@ -203,14 +192,15 @@ FLOAT * update(FLOAT * fase, FLOAT * azz){
       x=L_min+j*delx;
       v_new=v+deltat*azz[j];
       x_new=x+deltat*v_new;
-      if(v_new >= V_min && v_new <= V_max){ // && x_new >= L_min && x_new <= L_max){
-        i_v_new= (int) round((v_new-V_min)/delv);
-        j_x_new= (int) round((x_new-L_min)/delx);
-        if(x_new < L_min){
-          j_x_new = (int) Nx+j_x_new-1;
+      i_v_new= (int) round((v_new-V_min)/delv);
+      j_x_new= (int) round((x_new-L_min)/delx);
+
+      if(i_v_new >= 0 && i_v_new < Nv){
+        if(j_x_new < 0){
+          j_x_new = (int) (Nx+j_x_new-1);
         }
-        else if(x_new > L_max){
-          j_x_new = (int) j_x_new%Nx;
+        else if(j_x_new >= Nx){
+          j_x_new = (int) (j_x_new%Nx);
         }
         phase_temp[ndx(i_v_new, j_x_new)]=phase_temp[ndx(i_v_new, j_x_new)]+fase[ndx(i,j)];
       }
@@ -222,7 +212,6 @@ int ndx(int fila, int column){
   return fila*Nx+column;
 }
 void printINFO(FLOAT * density, FILE * dens_file, FLOAT * azz, FILE * azz_file, FLOAT * potencial, FILE * pot_file, FLOAT * fase, FILE * fase_file){
-  int i, j;
   for(i=0;i<Nv;i++){
     for(j=0;j<Nx;j++){
       fprintf(fase_file, "%lf ", fase[ndx(i,j)]);

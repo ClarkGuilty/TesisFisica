@@ -45,10 +45,11 @@ with imageio.get_writer('./movimiento.gif', mode='I') as writer:
         ax3=fig.add_subplot(gs[2,0])
         ax3.plot(x, pot[i*Nx:(i+1)*Nx])
         plt.ylabel('Potential (a.u.)')
+        plt.xlabel(r'Position($x$)')
         plt.ylim((np.min(pot),np.max(pot)))
 
         ax5=fig.add_subplot(gs[:,1:])
-        im=ax5.imshow(phase[i*Nx:(i+1)*Nx,:], extent=[L_min,L_min+L,V_min,V_min+V], cmap='BuPu')
+        im=ax5.imshow(phase[i*Nx:(i+1)*Nx,:], extent=[L_min,L_min+L,V_min,V_min+V], cmap='BuPu', aspect='auto')
         fig.colorbar(im)
         plt.xlabel(r'Position($x$)')
         plt.ylabel(r'Velocity($v$)')
