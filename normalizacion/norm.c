@@ -100,6 +100,8 @@ FLOAT * potfourier(FLOAT *rho){
 
   for(i=0;i<Nx;i++){
     res[i]=creal(rho_fin[i]/(Nx));
+    //res[i]=cimag(rho_fin[i]/(Nx));
+    //res[i]=cabs(rho_fin[i]/(Nx));
   }
   return res;
 }
@@ -107,21 +109,24 @@ FLOAT * potfourier_real(FLOAT *rho){
   FLOAT Kx;
   FLOAT kx;
   FLOAT * res;
-  res=malloc(sizeof(FLOAT)*Nx);
-  FLOAT *rho_in, *rho_out, *rho_fin;
+  int nc=(Nx/2+1);
+  FLOAT *rho_in, *rho_fin;
+  fftw_complex *rho_out;
   fftw_plan rho_plan;
-  rho_in=malloc(sizeof(FLOAT)*Nx);
-  rho_out=malloc(sizeof(FLOAT)*Nx);
-  rho_fin=malloc(sizeof(FLOAT)*Nx);
 
-  rho_plan = fftw_plan_r2r_1d(Nx, rho_in, rho_out, FFTW_R2HC, FFTW_ESTIMATE);
+  res=malloc(sizeof(FLOAT)*Nx);
+  rho_in=fftw_malloc(sizeof(FLOAT)*Nx);
+  rho_out=fftw_malloc(sizeof(fftw_complex)*nc);
+  rho_fin=fftw_malloc(sizeof(FLOAT)*Nx);
+
   for(i=0;i<Nx;i++){
     rho_in[i]=rho[i];
   }
+  rho_plan = fftw_plan_dft_r2c_1d(Nx, rho_in, rho_out, FFTW_ESTIMATE);
   fftw_execute(rho_plan);
   fftw_destroy_plan(rho_plan);
 
-  rho_plan = fftw_plan_r2r_1d(Nx, rho_out, rho_fin, FFTW_HC2R, FFTW_ESTIMATE);
+  rho_plan = fftw_plan_dft_c2r_1d(Nx, rho_out, rho_fin, FFTW_ESTIMATE);
   rho_out[0]=0.0;
   for(i=1;i<Nx;i++){
     kx=1/L*(FLOAT)i;
@@ -131,7 +136,7 @@ FLOAT * potfourier_real(FLOAT *rho){
   fftw_execute(rho_plan);
 
   for(i=0;i<Nx;i++){
-    res[i]=rho_fin[i]/(Nx);
+    res[i]=rho_fin[i]/(FLOAT)(Nx);
   }
   return res;
 }

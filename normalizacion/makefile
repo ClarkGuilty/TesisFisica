@@ -4,7 +4,7 @@ norm.txt : a.out
 	./a.out > norm.txt
 
 a.out : norm.c
-	gcc -lfftw3 -lm -Wall norm.c
+	gcc -lm -lfftw3 norm.c
 
 clean:
 	rm -fr norm.txt a.out norm.pdf
