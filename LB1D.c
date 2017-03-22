@@ -5,7 +5,11 @@
 #include <fftw3.h>
 
 #define Nx 1024
+#define Ny 1024
+#define Nz 1024
 #define Nv 1024
+#define Nu 1024
+#define Nw 1024
 #define L 2.0 //1.0 //2.0
 #define L_min -1.0// -0.5 //-1.0
 #define V 2.0
@@ -19,6 +23,10 @@
 
 FLOAT delx=L/(Nx-1);
 FLOAT delv=V/(Nv-1);
+FLOAT dely=L/(Ny);
+FLOAT delu=V/(Nu);
+FLOAT delz=L/(Nz);
+FLOAT delw=V/(Nw);
 FLOAT L_max = L_min+L;
 FLOAT V_max = V_min+V;
 int i,j,k;
@@ -28,6 +36,7 @@ FLOAT jeans(FLOAT pos, FLOAT vel, FLOAT rho, FLOAT amp, FLOAT sig, int n);
 FLOAT * densidad(FLOAT *fase);
 FLOAT * potential(FLOAT *rho);
 FLOAT * potfourier(FLOAT *rho);
+FLOAT * potfourier_real(FLOAT *rho);
 FLOAT * acceleration(FLOAT *Va);
 FLOAT * update(FLOAT * fase, FLOAT * azz);
 int ndx(int fila, int column);
@@ -73,7 +82,8 @@ int main(){
 
     dens=densidad(phase);
     //pot_new=potential(dens);
-    pot_new=potfourier(dens);
+    //pot_new=potfourier(dens);
+    pot_new=potfourier_real(dens);
     acc=acceleration(pot_new);
     if(k%skip==0){
         printINFO(dens, dens_dat, acc, acc_dat, pot_new, pot_dat, phase, phase_dat);
@@ -107,6 +117,7 @@ FLOAT * densidad(FLOAT *fase){
   FLOAT * rho;
   rho=malloc(sizeof(FLOAT)*Nx);
   for(i=0;i<Nx;i++){
+    rho[i]=0.0;
     for(j=0;j<Nv;j++){
       rho[i]+=fase[ndx(j,i)];
     }
@@ -123,10 +134,10 @@ FLOAT * potential(FLOAT *rho){
   }
   for(j=0;j<Nx*Nx/4;j++){
     for(i=1;i<Nx-1;i++){
-      Va[i]=0.5*(V_temp[i-1]+V_temp[i+1] - 0.005*rho[i]*delx*delx);
+      Va[i]=0.5*(V_temp[i-1]+V_temp[i+1] - rho[i]*delx*delx);
     }
-    Va[0]=0.5*(V_temp[Nx-1]+V_temp[1] - 0.005*rho[i]*delx*delx);
-    Va[Nx-1]=0.5*(V_temp[Nx-2]+V_temp[0] - 0.005*rho[i]*delx*delx);
+    Va[0]=0.5*(V_temp[Nx-1]+V_temp[1] - rho[i]*delx*delx);
+    Va[Nx-1]=0.5*(V_temp[Nx-2]+V_temp[0] - rho[i]*delx*delx);
     for(i=0;i<Nx;i++){
       V_temp[i]=Va[i];
     }
@@ -162,6 +173,42 @@ FLOAT * potfourier(FLOAT *rho){
 
   for(i=0;i<Nx;i++){
     res[i]=creal(rho_fin[i]/(2*Nx));
+  }
+  return res;
+}
+FLOAT * potfourier_real(FLOAT *rho){
+  FLOAT Kx;
+  FLOAT kx;
+  FLOAT * res;
+  int ncx=(Nx/2+1);
+  FLOAT *rho_in, *rho_fin;
+  fftw_complex *rho_out;
+  fftw_plan rho_plan;
+
+  res=malloc(sizeof(FLOAT)*Nx);
+  rho_in=fftw_malloc(sizeof(FLOAT)*Nx);
+  rho_out=fftw_malloc(sizeof(fftw_complex)*ncx);
+  rho_fin=fftw_malloc(sizeof(FLOAT)*Nx);
+
+  for(i=0;i<Nx;i++){
+    rho_in[i]=rho[i];
+  }
+  rho_plan = fftw_plan_dft_r2c_1d(Nx, rho_in, rho_out, FFTW_ESTIMATE);
+  fftw_execute(rho_plan);
+  fftw_destroy_plan(rho_plan);
+
+  rho_out[0]=0.0;
+  for(i=1;i<Nx;i++){
+    kx=1/L*(FLOAT)i;
+    Kx=kx*sinc(0.5*kx*delx);
+    rho_out[i]=rho_out[i]/(-pow(Kx,2)*4*Nx);
+  }
+  rho_plan = fftw_plan_dft_c2r_1d(Nx, rho_out, rho_fin, FFTW_ESTIMATE);
+  fftw_execute(rho_plan);
+  fftw_destroy_plan(rho_plan);
+
+  for(i=0;i<Nx;i++){
+    res[i]=rho_fin[i]/(2*Nx);
   }
   return res;
 }
