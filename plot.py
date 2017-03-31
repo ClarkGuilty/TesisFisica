@@ -23,8 +23,9 @@ x=np.arange(L_min, L_min+L+delx, delx)
 dens=np.genfromtxt("dens_dat.txt")
 acc=np.genfromtxt("acc_dat.txt")
 pot=np.genfromtxt("pot_dat.txt")
-phase=np.genfromtxt("phase_dat.txt")
+pot2=np.genfromtxt("pot_rela_dat.txt")+91.241221
 
+phase=np.genfromtxt("phase_dat.txt")
 os.mkdir('temp')
 
 with imageio.get_writer('./movimiento.gif', mode='I') as writer:
@@ -43,7 +44,9 @@ with imageio.get_writer('./movimiento.gif', mode='I') as writer:
         plt.ylim((np.min(acc),np.max(acc)))
 
         ax3=fig.add_subplot(gs[2,0])
-        ax3.plot(x, pot[i*Nx:(i+1)*Nx])
+        ax3.plot(x, pot[i*Nx:(i+1)*Nx], label='fourier')
+        #ax3.plot(x, pot2[i*Nx:(i+1)*Nx], 'g', label='relajacion')
+        plt.legend(framealpha=0.5)
         plt.ylabel('Potential (a.u.)')
         plt.xlabel(r'Position($x$)')
         plt.ylim((np.min(pot),np.max(pot)))
