@@ -42,13 +42,11 @@ void potfourier_real(FLOAT *rho, FLOAT *res);
 void acceleration(FLOAT *Va, FLOAT *aceleracion);
 void update(FLOAT * fase, FLOAT * azz, FLOAT * phase_temp);
 int ndx(int fila, int column);
-void printINFO(FLOAT * density, FILE * dens_file, FLOAT * azz, FILE * azz_file, FLOAT * potencial, FILE * pot_file, FLOAT * fase, FILE * fase_file);
+void printINFO(int indice, FLOAT * density, FILE * dens_file, FLOAT * azz, FILE * azz_file, FLOAT * potencial, FILE * pot_file, FLOAT * fase, FILE * fase_file);
 void printCONS();
 FLOAT sinc(FLOAT x);
 
 int main(){
-
-  printCONS();
 
   FLOAT *phase;
   phase = malloc(sizeof(FLOAT)*Nx*Nv);
@@ -68,9 +66,8 @@ int main(){
   pot=malloc(sizeof(FLOAT)*Nx);
   FILE * pot_dat;
   pot_dat=fopen("pot_dat.txt", "w");
-  FLOAT *pot_new;
-  pot_new=malloc(sizeof(FLOAT)*Nx);
 
+  printCONS();
 
   gauss(phase, phase_new, 4.0, 0.08);
   //jeans(phase, phase_new, 5.0, 0.01, 0.5, 2);
@@ -78,25 +75,14 @@ int main(){
   for(k=0;k<T;k++){
 
     densidad(phase, dens);
-    //potential(dens, pot_new);
-    //pot_new=potfourier(dens);
-    potfourier_real(dens, pot_new);
-    acceleration(pot_new, acc);
-    if(k%skip==0){
-        printINFO(dens, dens_dat, acc, acc_dat, pot_new, pot_dat, phase, phase_dat);
-    }
+    //potential(dens, pot);
+    //pot=potfourier(dens);
+    potfourier_real(dens, pot);
+    acceleration(pot, acc);
+
+    printINFO(k, dens, dens_dat, acc, acc_dat, pot, pot_dat, phase, phase_dat);
 
     update(phase, acc, phase_new);
-
-    for(i=0;i<Nv;i++){
-      for(j=0;j<Nx;j++){
-        phase[ndx(i,j)]=phase_new[ndx(i,j)];
-      }
-    }
-
-    for(i=1;i<Nx;i++){
-      pot[i]=pot_new[i];
-    }
   }
 
   return 0;
@@ -187,12 +173,12 @@ void acceleration(FLOAT *Va, FLOAT *aceleracion){
     aceleracion[i]=-(Va[i+1]-Va[i-1])/(2.0*delx);
   }
 }
-void update(FLOAT * fase, FLOAT * azz, FLOAT * phase_temp){
+void update(FLOAT * fase, FLOAT * azz, FLOAT * fase_new){
   int i_v_new, j_x_new;
   FLOAT x, v, x_new, v_new;
   for(i=0;i<Nv;i++){
     for(j=0;j<Nx;j++){
-      phase_temp[ndx(i,j)]=0.0;
+      fase_new[ndx(i,j)]=0.0;
     }
   }
 
@@ -212,25 +198,32 @@ void update(FLOAT * fase, FLOAT * azz, FLOAT * phase_temp){
         else if(j_x_new >= Nx){
           j_x_new = (int) (j_x_new%Nx);
         }
-        phase_temp[ndx(i_v_new, j_x_new)]=phase_temp[ndx(i_v_new, j_x_new)]+fase[ndx(i,j)];
+        fase_new[ndx(i_v_new, j_x_new)]=fase_new[ndx(i_v_new, j_x_new)]+fase[ndx(i,j)];
       }
+    }
+  }
+  for(i=0;i<Nv;i++){
+    for(j=0;j<Nx;j++){
+      fase[ndx(i,j)]=fase_new[ndx(i,j)];
     }
   }
 }
 int ndx(int fila, int column){
   return fila*Nx+column;
 }
-void printINFO(FLOAT * density, FILE * dens_file, FLOAT * azz, FILE * azz_file, FLOAT * potencial, FILE * pot_file, FLOAT * fase, FILE * fase_file){
-  for(i=0;i<Nv;i++){
-    for(j=0;j<Nx;j++){
-      fprintf(fase_file, "%lf ", fase[ndx(i,j)]);
+void printINFO(int indice, FLOAT * density, FILE * dens_file, FLOAT * azz, FILE * azz_file, FLOAT * potencial, FILE * pot_file, FLOAT * fase, FILE * fase_file){
+  if (indice%skip==0){
+    for(i=0;i<Nv;i++){
+      for(j=0;j<Nx;j++){
+        fprintf(fase_file, "%lf ", fase[ndx(i,j)]);
+      }
+      fprintf(fase_file, "\n");
     }
-    fprintf(fase_file, "\n");
-  }
-  for(j=0;j<Nx;j++){
-    fprintf(dens_file, "%lf \n", density[j]);
-    fprintf(azz_file, "%lf \n", azz[j]);
-    fprintf(pot_file, "%lf \n", potencial[j]);
+    for(j=0;j<Nx;j++){
+      fprintf(dens_file, "%lf \n", density[j]);
+      fprintf(azz_file, "%lf \n", azz[j]);
+      fprintf(pot_file, "%lf \n", potencial[j]);
+    }
   }
 }
 void printCONS(){
