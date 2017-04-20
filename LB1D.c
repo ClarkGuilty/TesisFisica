@@ -75,7 +75,7 @@ int main(){
 
   for(k=0;k<T;k++){
 
-    printf("Paso %d de %d \n", k, T);
+    printf("Paso %d/%d \n", k, T);
 
     densidad(phase, dens);
 
@@ -161,7 +161,7 @@ void potfourier_real(FLOAT *rho, FLOAT *res){
   for(i=1;i<Nx;i++){
     kx=2*pi/L*(FLOAT)i;
     Kx=kx*sinc(0.5*kx*delx);
-    rho_out[i]=rho_out[i]/(-pow(Kx,2)*100);
+    rho_out[i]=rho_out[i]/(-pow(Kx,2)*10);
   }
   rho_plan = fftw_plan_dft_c2r_1d(Nx, rho_out, rho_fin, FFTW_ESTIMATE);
   fftw_execute(rho_plan);
@@ -193,8 +193,8 @@ void update(FLOAT * fase, FLOAT * azz, FLOAT * fase_new){
       x=L_min+j*delx;
       v_new=v+deltat*azz[j];
       x_new=x+deltat*v_new;
-      i_v_new= ((v_new-V_min)/delv);
-      j_x_new= ((x_new-L_min)/delx);
+      i_v_new= (int) ((v_new-V_min)/delv);
+      j_x_new= (int) ((x_new-L_min)/delx);
 
       if(i_v_new >= 0 && i_v_new < Nv){
         if(j_x_new < 0){
