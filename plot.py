@@ -22,8 +22,9 @@ x=np.arange(L_min, L_min+L+delx, delx)
 
 dens=np.genfromtxt("dens_dat.txt")
 acc=np.genfromtxt("acc_dat.txt")
+acc2=np.genfromtxt("acc_rela_dat.txt")
 pot=np.genfromtxt("pot_dat.txt")
-pot2=np.genfromtxt("pot_rela_dat.txt")+91.241221
+pot2=np.genfromtxt("pot_rela_dat.txt")
 
 phase=np.genfromtxt("phase_dat.txt")
 os.mkdir('temp')
@@ -39,12 +40,14 @@ with imageio.get_writer('./movimiento.gif', mode='I') as writer:
         plt.ylim((np.min(dens),np.max(dens)))
 
         ax2=fig.add_subplot(gs[1,0])
-        ax2.plot(x, acc[i*Nx:(i+1)*Nx])
+        ax2.plot(x, acc[i*Nx:(i+1)*Nx], label='Fourier')
+        #ax2.plot(x, acc2[i*Nx:(i+1)*Nx], 'g', label='Relajacion')
+        plt.legend(framealpha=0.5)
         plt.ylabel('Acceleration (a.u.)')
         plt.ylim((np.min(acc),np.max(acc)))
 
         ax3=fig.add_subplot(gs[2,0])
-        ax3.plot(x, pot[i*Nx:(i+1)*Nx], label='fourier')
+        ax3.plot(x, pot[i*Nx:(i+1)*Nx], label='Fourier')
         #ax3.plot(x, pot2[i*Nx:(i+1)*Nx], 'g', label='relajacion')
         plt.legend(framealpha=0.5)
         plt.ylabel('Potential (a.u.)')

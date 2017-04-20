@@ -11,8 +11,8 @@
 #define Nu 1024
 #define Nw 1024
 
-#define L 1.0// 2.0 //1.0
-#define L_min -0.5//-1.0 // -0.5
+#define L 2.0 //1.0
+#define L_min -1.0 // -0.5
 #define V 2.0
 #define V_min -1.0
 
@@ -42,55 +42,52 @@ void potfourier_real(FLOAT *rho, FLOAT *res);
 void acceleration(FLOAT *Va, FLOAT *aceleracion);
 void update(FLOAT * fase, FLOAT * azz, FLOAT * phase_temp);
 int ndx(int fila, int column);
-void printINFO(int indice, FLOAT * density, FILE * dens_file, FLOAT * azz, FILE * azz_file, FLOAT * potencial, FILE * pot_file, FLOAT * fase, FILE * fase_file, FLOAT *potencial_rela, FILE * pot_rela_file);
+void printINFO(int indice, FLOAT * density, FILE * dens_file, FLOAT * azz, FILE * azz_file, FLOAT * potencial, FILE * pot_file, FLOAT * fase, FILE * fase_file, FLOAT *potencial_rela, FILE * pot_rela_file, FLOAT *azz_rela, FILE *azz_rela_file);
 void printCONS();
+void check(FLOAT *arreglo);
 FLOAT sinc(FLOAT x);
 
 int main(){
-
-  FLOAT *phase;
-  phase = malloc(sizeof(FLOAT)*Nx*Nv);
-  FILE * phase_dat;
+  FILE *phase_dat, *dens_dat, *acc_dat, *pot_dat, *acc_rela_dat, *pot_rela_dat;
   phase_dat=fopen("phase_dat.txt", "w");
-  FLOAT *phase_new;
-  phase_new = malloc(sizeof(FLOAT)*Nx*Nv);
-  FLOAT *dens;
-  dens=malloc(sizeof(FLOAT)*Nx);
-  FILE * dens_dat;
   dens_dat=fopen("dens_dat.txt", "w");
-  FLOAT *acc;
-  acc=malloc(sizeof(FLOAT)*Nx);
-  FILE * acc_dat;
   acc_dat=fopen("acc_dat.txt", "w");
-  FLOAT *pot;
-  pot=malloc(sizeof(FLOAT)*Nx);
-  FILE * pot_dat;
   pot_dat=fopen("pot_dat.txt", "w");
-
-  FLOAT *pot_rela;
-  pot_rela=malloc(sizeof(FLOAT)*Nx);
-  FLOAT *pot_temp;
-  pot_temp=malloc(sizeof(FLOAT)*Nx);
-  FILE * pot_rela_dat;
+  acc_rela_dat=fopen("acc_rela_dat.txt", "w");
   pot_rela_dat=fopen("pot_rela_dat.txt", "w");
+
+  FLOAT *phase, *phase_new, *dens, *acc, *pot, *acc_rela, *pot_temp, *pot_rela;
+  phase = malloc(sizeof(FLOAT)*Nx*Nv);
+  phase_new = malloc(sizeof(FLOAT)*Nx*Nv);
+  dens=malloc(sizeof(FLOAT)*Nx);
+  acc=malloc(sizeof(FLOAT)*Nx);
+  pot=malloc(sizeof(FLOAT)*Nx);
+  acc_rela=malloc(sizeof(FLOAT)*Nx);
+  pot_temp=malloc(sizeof(FLOAT)*Nx);
+  pot_rela=malloc(sizeof(FLOAT)*Nx);
+  check(phase); check(phase_new); check(dens); check(acc); check(pot);
+  check(acc_rela); check(pot_temp); check(pot_rela);
 
   printCONS();
 
-  //gauss(phase, phase_new, 4.0, 0.08);
-  jeans(phase, phase_new, 5.0, 0.01, 0.5, 2);
+  gauss(phase, phase_new, 4.0, 0.08);
+  //jeans(phase, phase_new, 5.0, 0.01, 0.5, 2);
 
   for(k=0;k<T;k++){
+
+    printf("Paso %d de %d \n", k, T);
 
     densidad(phase, dens);
 
     //potential(dens, pot_rela, pot_temp);
     potfourier_real(dens, pot);
 
+    //acceleration(pot_rela, acc_rela);
     acceleration(pot, acc);
 
-    printINFO(k, dens, dens_dat, acc, acc_dat, pot, pot_dat, phase, phase_dat, pot_rela, pot_rela_dat);
+    printINFO(k, dens, dens_dat, acc, acc_dat, pot, pot_dat, phase, phase_dat, pot_rela, pot_rela_dat, acc_rela, acc_rela_dat);
 
-    update(phase, acc, phase_new);
+    update(phase, acc_rela, phase_new);
   }
 
   return 0;
@@ -162,25 +159,20 @@ void potfourier_real(FLOAT *rho, FLOAT *res){
 
   rho_out[0]=0.0;
   for(i=1;i<Nx;i++){
-    kx=1/L*(FLOAT)i;
+    kx=2*pi/L*(FLOAT)i;
     Kx=kx*sinc(0.5*kx*delx);
-    rho_out[i]=rho_out[i]/(-pow(Kx,2)*pi*pow(2,0.5));
+    rho_out[i]=rho_out[i]/(-pow(Kx,2)*100);
   }
   rho_plan = fftw_plan_dft_c2r_1d(Nx, rho_out, rho_fin, FFTW_ESTIMATE);
   fftw_execute(rho_plan);
   fftw_destroy_plan(rho_plan);
 
   for(i=0;i<Nx;i++){
-    res[i]=rho_fin[i]/(pi*pow(2,0.5)*Nx*500);
+    res[i]=rho_fin[i]/(Nx);
   }
   fftw_free(rho_in); fftw_free(rho_out); fftw_free(rho_fin);
 }
 void acceleration(FLOAT *Va, FLOAT *aceleracion){
-  /*aceleracion[0]=-(Va[1]-Va[Nx-1])/(2.0*delx);
-  aceleracion[Nx-1]=-(Va[0]-Va[Nx-2])/(2.0*delx);
-  for(i=1;i<Nx-1;i++){
-    aceleracion[i]=-(Va[i+1]-Va[i-1])/(2.0*delx);
-  }*/
   for(i=1;i<Nx;i++){
     aceleracion[i]=-(Va[i]-Va[i-1])/delx;
   }
@@ -224,7 +216,7 @@ void update(FLOAT * fase, FLOAT * azz, FLOAT * fase_new){
 int ndx(int fila, int column){
   return fila*Nx+column;
 }
-void printINFO(int indice, FLOAT * density, FILE * dens_file, FLOAT * azz, FILE * azz_file, FLOAT * potencial, FILE * pot_file, FLOAT * fase, FILE * fase_file, FLOAT *potencial_rela, FILE * pot_rela_file){
+void printINFO(int indice, FLOAT * density, FILE * dens_file, FLOAT * azz, FILE * azz_file, FLOAT * potencial, FILE * pot_file, FLOAT * fase, FILE * fase_file, FLOAT *potencial_rela, FILE * pot_rela_file, FLOAT *azz_rela, FILE *azz_rela_file){
   if (indice%skip==0){
     for(i=0;i<Nv;i++){
       for(j=0;j<Nx;j++){
@@ -237,6 +229,7 @@ void printINFO(int indice, FLOAT * density, FILE * dens_file, FLOAT * azz, FILE 
       fprintf(azz_file, "%lf \n", azz[j]);
       fprintf(pot_file, "%lf \n", potencial[j]);
       fprintf(pot_rela_file, "%lf \n", potencial_rela[j]);
+      fprintf(azz_rela_file, "%lf \n", azz_rela[j]);
     }
   }
 }
@@ -250,4 +243,10 @@ FLOAT sinc(FLOAT x){
     return 1.0;
   }
   return sin(x)/x;
+}
+void check(FLOAT *arreglo){
+  if(!arreglo){
+    printf("Un arreglo no se definio correctamente \n");
+    exit(0);
+  }
 }
