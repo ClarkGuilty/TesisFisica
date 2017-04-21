@@ -44,8 +44,9 @@ void update(FLOAT * fase, FLOAT * azz, FLOAT * phase_temp);
 int ndx(int fila, int column);
 void printINFO(int indice, FLOAT * density, FILE * dens_file, FLOAT * azz, FILE * azz_file, FLOAT * potencial, FILE * pot_file, FLOAT * fase, FILE * fase_file, FLOAT *potencial_rela, FILE * pot_rela_file, FLOAT *azz_rela, FILE *azz_rela_file);
 void printCONS();
-void check(FLOAT *arreglo);
 FLOAT sinc(FLOAT x);
+void check(FLOAT *arreglo);
+void check2(fftw_complex *arreglo);
 
 int main(){
   FILE *phase_dat, *dens_dat, *acc_dat, *pot_dat, *acc_rela_dat, *pot_rela_dat;
@@ -75,7 +76,7 @@ int main(){
 
   for(k=0;k<T;k++){
 
-    printf("Paso %d/%d \n", k, T);
+    printf("Paso %d/%d \n", k+1, T);
 
     densidad(phase, dens);
 
@@ -87,7 +88,8 @@ int main(){
 
     printINFO(k, dens, dens_dat, acc, acc_dat, pot, pot_dat, phase, phase_dat, pot_rela, pot_rela_dat, acc_rela, acc_rela_dat);
 
-    update(phase, acc_rela, phase_new);
+    //update(phase, acc_rela, phase_new);
+    update(phase, acc, phase_new);
   }
 
   return 0;
@@ -149,6 +151,7 @@ void potfourier_real(FLOAT *rho, FLOAT *res){
   rho_in=fftw_malloc(sizeof(FLOAT)*Nx);
   rho_out=fftw_malloc(sizeof(fftw_complex)*ncx);
   rho_fin=fftw_malloc(sizeof(FLOAT)*Nx);
+  check(rho_in); check(rho_fin); check2(rho_out);
 
   for(i=0;i<Nx;i++){
     rho_in[i]=rho[i];
@@ -161,7 +164,7 @@ void potfourier_real(FLOAT *rho, FLOAT *res){
   for(i=1;i<Nx;i++){
     kx=2*pi/L*(FLOAT)i;
     Kx=kx*sinc(0.5*kx*delx);
-    rho_out[i]=rho_out[i]/(-pow(Kx,2)*10);
+    rho_out[i]=rho_out[i]/(-pow(Kx,2)*200);
   }
   rho_plan = fftw_plan_dft_c2r_1d(Nx, rho_out, rho_fin, FFTW_ESTIMATE);
   fftw_execute(rho_plan);
@@ -247,6 +250,12 @@ FLOAT sinc(FLOAT x){
 void check(FLOAT *arreglo){
   if(!arreglo){
     printf("Un arreglo no se definio correctamente \n");
+    exit(0);
+  }
+}
+void check2(fftw_complex *arreglo){
+  if(!arreglo){
+    printf("Un arreglo tipo fftw_complex no se definio correctamente \n");
     exit(0);
   }
 }
