@@ -17,6 +17,7 @@ V_min=cons[5]
 T=int(cons[6])
 skip=int(cons[7])
 deltat=cons[8]
+metodo=np.genfromtxt("Constantes.txt", dtype="string")[9,1]
 delx=L/(Nx-1)
 x=np.arange(L_min, L_min+L+delx, delx)
 
@@ -27,9 +28,10 @@ pot=np.genfromtxt("pot_dat.txt")
 phase=np.genfromtxt("phase_dat.txt")
 os.mkdir('temp')
 
-with imageio.get_writer('./movimiento.gif', mode='I') as writer:
+with imageio.get_writer('./'+metodo+'.gif', mode='I') as writer:
     for i in range(int(T/skip)):
         fig=plt.figure(figsize=(12,8))
+        plt.suptitle(metodo+" Method", fontsize=20)
         gs=gridspec.GridSpec(3,4)
 
         ax1=fig.add_subplot(gs[0,0])
@@ -38,15 +40,13 @@ with imageio.get_writer('./movimiento.gif', mode='I') as writer:
         plt.ylim((np.min(dens),np.max(dens)))
 
         ax2=fig.add_subplot(gs[1,0])
-        ax2.plot(x, acc[i*Nx:(i+1)*Nx], label='Fourier')
+        ax2.plot(x, acc[i*Nx:(i+1)*Nx])
         plt.ylim((np.min(acc),np.max(acc)))
-        plt.legend(framealpha=0.5)
         plt.ylabel('Acceleration (a.u.)')
 
         ax3=fig.add_subplot(gs[2,0])
-        ax3.plot(x, pot[i*Nx:(i+1)*Nx], label='Fourier')
+        ax3.plot(x, pot[i*Nx:(i+1)*Nx])
         plt.ylim((np.min(pot),np.max(pot)))
-        plt.legend(framealpha=0.5)
         plt.ylabel('Potential (a.u.)')
         plt.xlabel(r'Position($x$)')
 

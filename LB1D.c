@@ -20,8 +20,8 @@
 #define G 6.67408E-11
 #define FLOAT double
 
-#define T 30
-#define skip 3
+#define T 3
+#define skip 1
 #define deltat 0.1
 
 FLOAT delx=L/(Nx);
@@ -35,6 +35,7 @@ FLOAT V_max = V_min+V;
 int i,j,k;
 FILE *phase_dat, *dens_dat, *acc_dat, *pot_dat;
 FLOAT *phase, *phase_new, *dens, *acc, *pot, *pot_temp;
+char *method;
 
 void gauss(FLOAT *arreglo, FLOAT *arreglo_new, FLOAT amp, FLOAT sigma);
 void jeans(FLOAT *arreglo, FLOAT *arreglo_new, FLOAT rho, FLOAT amp, FLOAT sig, int n);
@@ -45,7 +46,7 @@ void acceleration(FLOAT *Va, FLOAT *aceleracion);
 void update(FLOAT * fase, FLOAT * azz, FLOAT * phase_temp);
 int ndx(int fila, int column);
 void printINFO(int indice, FLOAT * density, FILE * dens_file, FLOAT * azz, FILE * azz_file, FLOAT * potencial, FILE * pot_file, FLOAT * fase, FILE * fase_file);
-void printCONS();
+void printCONS(char *state);
 FLOAT sinc(FLOAT x);
 void check(FLOAT *arreglo);
 void check2(fftw_complex *arreglo);
@@ -57,7 +58,7 @@ int main(){
   dens_dat=fopen("dens_dat.txt", "w");
   acc_dat=fopen("acc_dat.txt", "w");
   pot_dat=fopen("pot_dat.txt", "w");
-  
+
   phase = malloc(sizeof(FLOAT)*Nx*Nv);
   phase_new = malloc(sizeof(FLOAT)*Nx*Nv);
   dens=malloc(sizeof(FLOAT)*Nx);
@@ -66,13 +67,11 @@ int main(){
   pot_temp=malloc(sizeof(FLOAT)*Nx);
   check(phase); check(phase_new); check(dens); check(acc); check(pot); check(pot_temp);
 
-  printCONS();
-
-  gauss(phase, phase_new, 4.0, 0.08);
+  gauss(phase, phase_new, 0.02, 0.08);
   //jeans(phase, phase_new, 5.0, 0.01, 0.5, 2);
 
-  RELAX();
-  //FOURIER();
+  //RELAX();
+  FOURIER();
 
   return 0;
 }
@@ -113,10 +112,10 @@ void potential(FLOAT *rho, FLOAT *Va, FLOAT *V_temp){
   }
   for(j=0;j<Nx*Nx/4;j++){
     for(i=1;i<Nx-1;i++){
-      Va[i]=0.5*(V_temp[i-1]+V_temp[i+1] - 0.005*rho[i]*delx*delx);
+      Va[i]=0.5*(V_temp[i-1]+V_temp[i+1] - rho[i]*delx*delx);
     }
-    Va[0]=0.5*(V_temp[Nx-1]+V_temp[1] - 0.005*rho[i]*delx*delx);
-    Va[Nx-1]=0.5*(V_temp[Nx-2]+V_temp[0] - 0.005*rho[i]*delx*delx);
+    Va[0]=0.5*(V_temp[Nx-1]+V_temp[1] - rho[i]*delx*delx);
+    Va[Nx-1]=0.5*(V_temp[Nx-2]+V_temp[0] - rho[i]*delx*delx);
     for(i=0;i<Nx;i++){
       V_temp[i]=Va[i];
     }
@@ -217,10 +216,10 @@ void printINFO(int indice, FLOAT * density, FILE * dens_file, FLOAT * azz, FILE 
     }
   }
 }
-void printCONS(){
+void printCONS(char *state){
   FILE *CONS;
   CONS=fopen("Constantes.txt", "w");
-  fprintf(CONS, " Nx= %d\n Nv= %d\n L= %lf\n L_min= %lf\n V= %lf\n V_min= %lf\n T= %d\n skip= %d\n deltat= %lf", Nx, Nv, L, L_min, V, V_min, T, skip, deltat);
+  fprintf(CONS, " Nx= %d\n Nv= %d\n L= %lf\n L_min= %lf\n V= %lf\n V_min= %lf\n T= %d\n skip= %d\n deltat= %lf \n Metodo= %s", Nx, Nv, L, L_min, V, V_min, T, skip, deltat, state);
 }
 FLOAT sinc(FLOAT x){
   if (x==0){
@@ -241,6 +240,8 @@ void check2(fftw_complex *arreglo){
   }
 }
 void RELAX(){
+  method="Relaxation";
+  printCONS(method);
   for(k=0;k<T;k++){
     printf("Paso %d/%d \n", k+1, T);
     densidad(phase, dens);
@@ -253,6 +254,8 @@ void RELAX(){
   }
 }
 void FOURIER(){
+  method="Fourier";
+  printCONS(method);
   for(k=0;k<T;k++){
     printf("Paso %d/%d \n", k+1, T);
     densidad(phase, dens);
