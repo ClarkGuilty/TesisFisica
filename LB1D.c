@@ -20,8 +20,8 @@
 #define G 6.67408E-11
 #define FLOAT double
 
-#define T 97
-#define skip 8
+#define T 20
+#define skip 2
 #define deltat 0.1
 
 FLOAT delx=L/(Nx);
@@ -75,9 +75,9 @@ int main(){
   pot_temp=malloc(sizeof(FLOAT)*Nx);
   check(phase); check(phase_new); check(dens); check(acc); check(pot); check(pot_temp);
 
-  //gauss(phase, phase_new, 0.02, 0.08);
-  bullet(phase, phase_new, 0.01, 0.03, -0.4, 0.01, 0.03, 0.4);
-  //jeans(phase, phase_new, 5.0, 0.01, 0.5, 2);
+  gauss(phase, phase_new, 0.02, 0.08);
+  //bullet(phase, phase_new, 0.01, 0.03, -0.4, 0.01, 0.03, 0.4);
+  //jeans(phase, phase_new, 0.025, 0.005, 0.5, 2);
 
   //RELAX();
   FOURIER();

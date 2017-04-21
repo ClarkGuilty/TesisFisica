@@ -40,14 +40,14 @@ with imageio.get_writer('./'+metodo+'.gif', mode='I') as writer:
         plt.ylim((np.min(dens),np.max(dens)))
 
         ax2=fig.add_subplot(gs[1,0])
-        ax2.plot(x, acc[i*Nx:(i+1)*Nx])
-        plt.ylim((np.min(acc),np.max(acc)))
-        plt.ylabel('Acceleration (a.u.)')
-
-        ax3=fig.add_subplot(gs[2,0])
-        ax3.plot(x, pot[i*Nx:(i+1)*Nx])
+        ax2.plot(x, pot[i*Nx:(i+1)*Nx])
         plt.ylim((np.min(pot),np.max(pot)))
         plt.ylabel('Potential (a.u.)')
+
+        ax3=fig.add_subplot(gs[2,0])
+        ax3.plot(x, acc[i*Nx:(i+1)*Nx])
+        plt.ylim((np.min(acc),np.max(acc)))
+        plt.ylabel('Acceleration (a.u.)')
         plt.xlabel(r'Position($x$)')
 
         ax5=fig.add_subplot(gs[:,1:])
