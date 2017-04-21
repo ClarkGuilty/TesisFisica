@@ -4,15 +4,15 @@
 #include <complex.h>
 #include <fftw3.h>
 
-#define Nx 1024
+#define Nx 2048
 #define Ny 1024
 #define Nz 1024
-#define Nv 1024
+#define Nv 2048
 #define Nu 1024
 #define Nw 1024
 
-#define L 3.0 //1.0
-#define L_min -1.5 // -0.5
+#define L 2.0 //1.0
+#define L_min -1.0 // -0.5
 #define V 2.0
 #define V_min -1.0
 
@@ -20,8 +20,8 @@
 #define G 6.67408E-11
 #define FLOAT double
 
-#define T 20
-#define skip 2
+#define T 150
+#define skip 3
 #define deltat 0.1
 
 FLOAT delx=L/(Nx);
@@ -32,7 +32,11 @@ FLOAT delz=L/(Nz);
 FLOAT delw=V/(Nw);
 FLOAT L_max = L_min+L;
 FLOAT V_max = V_min+V;
+
 int i,j,k;
+int i_v_new, j_x_new;
+FLOAT x, v, x_new, v_new;
+
 FILE *phase_dat, *dens_dat, *acc_dat, *pot_dat;
 FLOAT *phase, *phase_new, *dens, *acc, *pot, *pot_temp;
 
@@ -75,8 +79,8 @@ int main(){
   pot_temp=malloc(sizeof(FLOAT)*Nx);
   check(phase); check(phase_new); check(dens); check(acc); check(pot); check(pot_temp);
 
-  gauss(phase, phase_new, 0.02, 0.08);
-  //bullet(phase, phase_new, 0.01, 0.03, -0.4, 0.01, 0.03, 0.4);
+  //gauss(phase, phase_new, 0.02, 0.08);
+  bullet(phase, phase_new, 0.01, 0.03, -0.4, 0.01, 0.03, 0.4);
   //jeans(phase, phase_new, 0.025, 0.005, 0.5, 2);
 
   //RELAX();
@@ -171,8 +175,6 @@ void acceleration(FLOAT *Va, FLOAT *aceleracion){
   aceleracion[0]=-(Va[0]-Va[Nx-1])/delx;
 }
 void update(FLOAT * fase, FLOAT * azz, FLOAT * fase_new){
-  int i_v_new, j_x_new;
-  FLOAT x, v, x_new, v_new;
   for(i=0;i<Nv;i++){
     for(j=0;j<Nx;j++){
       fase_new[ndx(i,j)]=0.0;

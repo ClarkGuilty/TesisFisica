@@ -51,7 +51,7 @@ with imageio.get_writer('./'+metodo+'.gif', mode='I') as writer:
         plt.xlabel(r'Position($x$)')
 
         ax5=fig.add_subplot(gs[:,1:])
-        im=ax5.imshow(phase[i*Nx:(i+1)*Nx,:], extent=[L_min,L_min+L,V_min,V_min+V], cmap='BuPu', aspect='auto')
+        im=ax5.imshow(np.fliplr(phase[i*Nx:(i+1)*Nx,:]), extent=[L_min,L_min+L,V_min,V_min+V], cmap='BuPu', aspect='auto')
         fig.colorbar(im)
         plt.xlabel(r'Position($x$)')
         plt.ylabel(r'Velocity($v$)')
