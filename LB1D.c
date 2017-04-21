@@ -11,8 +11,8 @@
 #define Nu 1024
 #define Nw 1024
 
-#define L 2.0 //1.0
-#define L_min -1.0 // -0.5
+#define L 3.0 //1.0
+#define L_min -1.5 // -0.5
 #define V 2.0
 #define V_min -1.0
 
@@ -20,8 +20,8 @@
 #define G 6.67408E-11
 #define FLOAT double
 
-#define T 3
-#define skip 1
+#define T 97
+#define skip 8
 #define deltat 0.1
 
 FLOAT delx=L/(Nx);
@@ -35,9 +35,17 @@ FLOAT V_max = V_min+V;
 int i,j,k;
 FILE *phase_dat, *dens_dat, *acc_dat, *pot_dat;
 FLOAT *phase, *phase_new, *dens, *acc, *pot, *pot_temp;
+
+FLOAT Kx;
+FLOAT kx;
+int ncx=(Nx/2+1);
+fftw_complex *rho_out, *rho_in, *rho_fin;
+fftw_plan rho_plan;
+
 char *method;
 
 void gauss(FLOAT *arreglo, FLOAT *arreglo_new, FLOAT amp, FLOAT sigma);
+void bullet(FLOAT *arreglo, FLOAT *arreglo_new, FLOAT amp1, FLOAT sigma1, FLOAT x1, FLOAT amp2, FLOAT sigma2, FLOAT x2);
 void jeans(FLOAT *arreglo, FLOAT *arreglo_new, FLOAT rho, FLOAT amp, FLOAT sig, int n);
 void densidad(FLOAT *fase, FLOAT *rho);
 void potential(FLOAT *rho, FLOAT *Va, FLOAT *V_temp);
@@ -67,7 +75,8 @@ int main(){
   pot_temp=malloc(sizeof(FLOAT)*Nx);
   check(phase); check(phase_new); check(dens); check(acc); check(pot); check(pot_temp);
 
-  gauss(phase, phase_new, 0.02, 0.08);
+  //gauss(phase, phase_new, 0.02, 0.08);
+  bullet(phase, phase_new, 0.01, 0.03, -0.4, 0.01, 0.03, 0.4);
   //jeans(phase, phase_new, 5.0, 0.01, 0.5, 2);
 
   //RELAX();
@@ -82,7 +91,15 @@ void gauss(FLOAT *arreglo, FLOAT *arreglo_new, FLOAT amp, FLOAT sigma){
       FLOAT pos=L_min+j*delx;
       FLOAT vel=V_min+i*delv;
       arreglo[ndx(i,j)]=amp*exp(-(pow(pos,2)+pow(vel,2))/sigma);
-      arreglo_new[ndx(i,j)]=arreglo[ndx(i,j)];
+    }
+  }
+}
+void bullet(FLOAT *arreglo, FLOAT *arreglo_new, FLOAT amp1, FLOAT sigma1, FLOAT x1, FLOAT amp2, FLOAT sigma2, FLOAT x2){
+  for(i=0;i<Nv;i++){
+    for(j=0;j<Nx;j++){
+      FLOAT pos=L_min+j*delx;
+      FLOAT vel=V_min+i*delv;
+      arreglo[ndx(i,j)]=amp1*exp(-(pow(pos-x1,2)+pow(vel,2))/sigma1)+amp2*exp(-(pow(pos-x2,2)+pow(vel,2))/sigma2);
     }
   }
 }
@@ -94,7 +111,6 @@ void jeans(FLOAT *arreglo, FLOAT *arreglo_new, FLOAT rho, FLOAT amp, FLOAT sig, 
       FLOAT pos=L_min+j*delx;
       FLOAT vel=V_min+i*delv;
       arreglo[ndx(i,j)]=rho/(pow(2*pi*sig*sig,0.5))*exp(-pow(vel,2)/(2*sig*sig))*(1+amp*cos(k*pos));
-      arreglo_new[ndx(i,j)]=arreglo[ndx(i,j)];
     }
   }
 }
@@ -122,22 +138,16 @@ void potential(FLOAT *rho, FLOAT *Va, FLOAT *V_temp){
   }
 }
 void potfourier_real(FLOAT *rho, FLOAT *res){
-  FLOAT Kx;
-  FLOAT kx;
-  int ncx=(Nx/2+1);
-  FLOAT *rho_in, *rho_fin;
-  fftw_complex *rho_out;
-  fftw_plan rho_plan;
 
-  rho_in=fftw_malloc(sizeof(FLOAT)*Nx);
-  rho_out=fftw_malloc(sizeof(fftw_complex)*ncx);
-  rho_fin=fftw_malloc(sizeof(FLOAT)*Nx);
-  check(rho_in); check(rho_fin); check2(rho_out);
+  rho_in=fftw_malloc(sizeof(fftw_complex)*Nx);
+  rho_out=fftw_malloc(sizeof(fftw_complex)*Nx);
+  rho_fin=fftw_malloc(sizeof(fftw_complex)*Nx);
+  check2(rho_in); check2(rho_fin); check2(rho_out);
 
   for(i=0;i<Nx;i++){
     rho_in[i]=rho[i];
   }
-  rho_plan = fftw_plan_dft_r2c_1d(Nx, rho_in, rho_out, FFTW_ESTIMATE);
+  rho_plan = fftw_plan_dft_1d(Nx, rho_in, rho_out, 1, FFTW_ESTIMATE);
   fftw_execute(rho_plan);
   fftw_destroy_plan(rho_plan);
 
@@ -147,15 +157,12 @@ void potfourier_real(FLOAT *rho, FLOAT *res){
     Kx=kx*sinc(0.5*kx*delx);
     rho_out[i]=rho_out[i]/(-pow(Kx,2));
   }
-  rho_plan = fftw_plan_dft_c2r_1d(Nx, rho_out, rho_fin, FFTW_ESTIMATE);
+  rho_plan = fftw_plan_dft_1d(Nx, rho_out, rho_fin, -1, FFTW_ESTIMATE);
   fftw_execute(rho_plan);
   fftw_destroy_plan(rho_plan);
-
   for(i=0;i<Nx;i++){
-    //printf("%d ", i);
-    res[i]=0.005*rho_fin[i]/(Nx);
+    res[i]=rho_fin[i]/(Nx);
   }
-  fftw_free(rho_in); fftw_free(rho_out); fftw_free(rho_fin);
 }
 void acceleration(FLOAT *Va, FLOAT *aceleracion){
   for(i=1;i<Nx;i++){

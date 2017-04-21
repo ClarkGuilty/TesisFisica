@@ -26,7 +26,7 @@ acc=np.genfromtxt("acc_dat.txt")
 pot=np.genfromtxt("pot_dat.txt")
 
 phase=np.genfromtxt("phase_dat.txt")
-os.mkdir('temp')
+os.mkdir('temp'+metodo)
 
 with imageio.get_writer('./'+metodo+'.gif', mode='I') as writer:
     for i in range(int(T/skip)):
@@ -59,10 +59,10 @@ with imageio.get_writer('./'+metodo+'.gif', mode='I') as writer:
 
         gs.update(wspace=0.5, hspace=0.5)
         fig = plt.gcf()
-        plt.savefig('./temp/'+str(i)+'phase.png', format='png')
+        plt.savefig('./temp'+metodo+'/'+str(i)+'phase.png', format='png')
         plt.close()
 
-        image=imageio.imread('./temp/'+str(i)+'phase.png')
+        image=imageio.imread('./temp'+metodo+'/'+str(i)+'phase.png')
         writer.append_data(image)
 
 #borra directorio temporal
