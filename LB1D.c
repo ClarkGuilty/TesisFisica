@@ -4,10 +4,11 @@
 #include <complex.h>
 #include <fftw3.h>
 
-#define Nx 2048
+//-------------------------Constantes-------------------------//
+#define Nx 1024
 #define Ny 1024
 #define Nz 1024
-#define Nv 2048
+#define Nv 1024
 #define Nu 1024
 #define Nw 1024
 
@@ -20,10 +21,11 @@
 #define G 6.67408E-11
 #define FLOAT double
 
-#define T 150
+#define T 30
 #define skip 3
 #define deltat 0.1
 
+//-------------------------Variables globales-------------------------//
 FLOAT delx=L/(Nx);
 FLOAT delv=V/(Nv);
 FLOAT dely=L/(Ny);
@@ -37,17 +39,17 @@ int i,j,k;
 int i_v_new, j_x_new;
 FLOAT x, v, x_new, v_new;
 
-FILE *phase_dat, *dens_dat, *acc_dat, *pot_dat;
-FLOAT *phase, *phase_new, *dens, *acc, *pot, *pot_temp;
+FILE *phase_dat, *dens_dat, *acc_dat, *pot_dat, *vels_dat;
+FLOAT *phase, *phase_new, *dens, *acc, *pot, *pot_temp, *vels;
 
 FLOAT Kx;
 FLOAT kx;
-int ncx=(Nx/2+1);
 fftw_complex *rho_out, *rho_in, *rho_fin;
 fftw_plan rho_plan;
 
 char *method;
 
+//-------------------------Declaracion de funciones-------------------------//
 void gauss(FLOAT *arreglo, FLOAT *arreglo_new, FLOAT amp, FLOAT sigma);
 void bullet(FLOAT *arreglo, FLOAT *arreglo_new, FLOAT amp1, FLOAT sigma1, FLOAT x1, FLOAT amp2, FLOAT sigma2, FLOAT x2);
 void jeans(FLOAT *arreglo, FLOAT *arreglo_new, FLOAT rho, FLOAT amp, FLOAT sig, int n);
@@ -57,19 +59,21 @@ void potfourier_real(FLOAT *rho, FLOAT *res);
 void acceleration(FLOAT *Va, FLOAT *aceleracion);
 void update(FLOAT * fase, FLOAT * azz, FLOAT * phase_temp);
 int ndx(int fila, int column);
-void printINFO(int indice, FLOAT * density, FILE * dens_file, FLOAT * azz, FILE * azz_file, FLOAT * potencial, FILE * pot_file, FLOAT * fase, FILE * fase_file);
+void printINFO(int indice, FLOAT * density, FILE * dens_file, FLOAT * azz, FILE * azz_file, FLOAT * potencial, FILE * pot_file, FLOAT * fase, FILE * fase_file, FLOAT * speed, FILE * speed_file);
 void printCONS(char *state);
 FLOAT sinc(FLOAT x);
 void check(FLOAT *arreglo);
 void check2(fftw_complex *arreglo);
+void dens_vel(FLOAT *fase, FLOAT *rho_v);
 void RELAX();
 void FOURIER();
-
+//-------------------------Main-------------------------//
 int main(){
   phase_dat=fopen("phase_dat.txt", "w");
   dens_dat=fopen("dens_dat.txt", "w");
   acc_dat=fopen("acc_dat.txt", "w");
   pot_dat=fopen("pot_dat.txt", "w");
+  vels_dat=fopen("vels_dat.txt", "w");
 
   phase = malloc(sizeof(FLOAT)*Nx*Nv);
   phase_new = malloc(sizeof(FLOAT)*Nx*Nv);
@@ -77,10 +81,11 @@ int main(){
   acc=malloc(sizeof(FLOAT)*Nx);
   pot=malloc(sizeof(FLOAT)*Nx);
   pot_temp=malloc(sizeof(FLOAT)*Nx);
-  check(phase); check(phase_new); check(dens); check(acc); check(pot); check(pot_temp);
+  vels=malloc(sizeof(FLOAT)*Nv);
+  check(phase); check(phase_new); check(dens); check(acc); check(pot); check(pot_temp); check(vels);
 
-  //gauss(phase, phase_new, 0.02, 0.08);
-  bullet(phase, phase_new, 0.01, 0.03, -0.4, 0.01, 0.03, 0.4);
+  gauss(phase, phase_new, 0.01, 0.04);
+  //bullet(phase, phase_new, 0.01, 0.03, -0.4, 0.01, 0.03, 0.4);
   //jeans(phase, phase_new, 0.025, 0.005, 0.5, 2);
 
   //RELAX();
@@ -89,6 +94,7 @@ int main(){
   return 0;
 }
 
+//-------------------------Funciones-------------------------//
 void gauss(FLOAT *arreglo, FLOAT *arreglo_new, FLOAT amp, FLOAT sigma){
   for(i=0;i<Nv;i++){
     for(j=0;j<Nx;j++){
@@ -210,7 +216,7 @@ void update(FLOAT * fase, FLOAT * azz, FLOAT * fase_new){
 int ndx(int fila, int column){
   return fila*Nx+column;
 }
-void printINFO(int indice, FLOAT * density, FILE * dens_file, FLOAT * azz, FILE * azz_file, FLOAT * potencial, FILE * pot_file, FLOAT * fase, FILE * fase_file){
+void printINFO(int indice, FLOAT * density, FILE * dens_file, FLOAT * azz, FILE * azz_file, FLOAT * potencial, FILE * pot_file, FLOAT * fase, FILE * fase_file, FLOAT * speed, FILE * speed_file){
   if (indice%skip==0){
     for(i=0;i<Nv;i++){
       for(j=0;j<Nx;j++){
@@ -222,6 +228,9 @@ void printINFO(int indice, FLOAT * density, FILE * dens_file, FLOAT * azz, FILE 
       fprintf(dens_file, "%lf \n", density[j]);
       fprintf(azz_file, "%lf \n", azz[j]);
       fprintf(pot_file, "%lf \n", potencial[j]);
+    }
+    for(j=0;j<Nv;j++){
+      fprintf(speed_file, "%lf \n", speed[j]);
     }
   }
 }
@@ -248,6 +257,14 @@ void check2(fftw_complex *arreglo){
     exit(0);
   }
 }
+void dens_vel(FLOAT *fase, FLOAT *rho_v){
+  for(j=0;j<Nv;j++){
+    rho_v[i]=0.0;
+    for(i=0;i<Nx;i++){
+      rho_v[i]+=fase[ndx(j,i)];
+    }
+  }
+}
 void RELAX(){
   method="Relaxation";
   printCONS(method);
@@ -257,7 +274,7 @@ void RELAX(){
     potential(dens, pot, pot_temp);
     acceleration(pot, acc);
 
-    printINFO(k, dens, dens_dat, acc, acc_dat, pot, pot_dat, phase, phase_dat);
+    printINFO(k, dens, dens_dat, acc, acc_dat, pot, pot_dat, phase, phase_dat, vels, vels_dat);
 
     update(phase, acc, phase_new);
   }
@@ -271,7 +288,9 @@ void FOURIER(){
     potfourier_real(dens, pot);
     acceleration(pot, acc);
 
-    printINFO(k, dens, dens_dat, acc, acc_dat, pot, pot_dat, phase, phase_dat);
+    dens_vel(phase, vels);
+
+    printINFO(k, dens, dens_dat, acc, acc_dat, pot, pot_dat, phase, phase_dat, vels, vels_dat);
 
     update(phase, acc, phase_new);
   }

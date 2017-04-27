@@ -24,15 +24,16 @@ x=np.arange(L_min, L_min+L+delx, delx)
 dens=np.genfromtxt("dens_dat.txt")
 acc=np.genfromtxt("acc_dat.txt")
 pot=np.genfromtxt("pot_dat.txt")
+vels=np.genfromtxt("vels_dat.txt")
 
 phase=np.genfromtxt("phase_dat.txt")
 os.mkdir('temp'+metodo)
 
 with imageio.get_writer('./'+metodo+'.gif', mode='I') as writer:
     for i in range(int(T/skip)):
-        fig=plt.figure(figsize=(12,8))
+        fig=plt.figure(figsize=(18,12))
         plt.suptitle(metodo+" Method", fontsize=20)
-        gs=gridspec.GridSpec(3,4)
+        gs=gridspec.GridSpec(4,5)
 
         ax1=fig.add_subplot(gs[0,0])
         ax1.plot(x, dens[i*Nx:(i+1)*Nx])
@@ -50,8 +51,14 @@ with imageio.get_writer('./'+metodo+'.gif', mode='I') as writer:
         plt.ylabel('Acceleration (a.u.)')
         plt.xlabel(r'Position($x$)')
 
+        ax4=fig.add_subplot(gs[3,0])
+        ax4.plot(x, vels[i*Nv:(i+1)*Nv])
+        plt.ylim((np.min(vels),np.max(vels)))
+        plt.ylabel('Velocity Density (a.u.)')
+        plt.xlabel(r'Velocity($x$)')
+
         ax5=fig.add_subplot(gs[:,1:])
-        im=ax5.imshow(np.fliplr(phase[i*Nx:(i+1)*Nx,:]), extent=[L_min,L_min+L,V_min,V_min+V], cmap='BuPu', aspect='auto')
+        im=ax5.imshow(np.transpose(phase[i*Nx:(i+1)*Nx,:]), extent=[L_min,L_min+L,V_min,V_min+V], cmap='BuPu', aspect='auto')
         fig.colorbar(im)
         plt.xlabel(r'Position($x$)')
         plt.ylabel(r'Velocity($v$)')
