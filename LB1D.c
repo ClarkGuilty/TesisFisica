@@ -19,10 +19,10 @@
 
 #define pi 3.141592654
 #define G 6.67408E-11
-#define FLOAT double
+#define FLOAT float
 
-#define T 50
-#define skip 10
+#define T 150
+#define skip 15
 #define deltat 0.5
 
 //-------------------------Variables globales-------------------------//
@@ -84,8 +84,7 @@ int main(){
   vels=malloc(sizeof(FLOAT)*Nv);
   check(phase); check(phase_new); check(dens); check(acc); check(pot); check(pot_temp); check(vels);
 
-  //gauss(phase, phase_new, 0.01, 0.04);
-  gauss(phase, phase_new, 4, 0.08);
+  gauss(phase, phase_new, 4, 0.06);
   //bullet(phase, phase_new, 0.01, 0.03, -0.4, 0.01, 0.03, 0.4);
   //jeans(phase, phase_new, 0.025, 0.005, 0.5, 2);
 
@@ -99,8 +98,8 @@ int main(){
 void gauss(FLOAT *arreglo, FLOAT *arreglo_new, FLOAT amp, FLOAT sigma){
   for(i=0;i<Nv;i++){
     for(j=0;j<Nx;j++){
-      FLOAT pos=L_min+j*delx;
-      FLOAT vel=V_min+i*delv;
+      FLOAT pos=L_min+j*delx+0.5*delx;
+      FLOAT vel=V_min+i*delv+0.5*delv;
       arreglo[ndx(i,j)]=amp*exp(-(pow(pos,2)+pow(vel,2))/sigma);
     }
   }
@@ -108,8 +107,8 @@ void gauss(FLOAT *arreglo, FLOAT *arreglo_new, FLOAT amp, FLOAT sigma){
 void bullet(FLOAT *arreglo, FLOAT *arreglo_new, FLOAT amp1, FLOAT sigma1, FLOAT x1, FLOAT amp2, FLOAT sigma2, FLOAT x2){
   for(i=0;i<Nv;i++){
     for(j=0;j<Nx;j++){
-      FLOAT pos=L_min+j*delx+0.5*delx;
-      FLOAT vel=V_min+i*delv+0.5*delv;
+      FLOAT pos=L_min+j*delx;
+      FLOAT vel=V_min+i*delv;
       arreglo[ndx(i,j)]=amp1*exp(-(pow(pos-x1,2)+pow(vel,2))/sigma1)+amp2*exp(-(pow(pos-x2,2)+pow(vel,2))/sigma2);
     }
   }
@@ -119,8 +118,8 @@ void jeans(FLOAT *arreglo, FLOAT *arreglo_new, FLOAT rho, FLOAT amp, FLOAT sig, 
   FLOAT k = n*k0;
   for(i=0;i<Nv;i++){
     for(j=0;j<Nx;j++){
-      FLOAT pos=L_min+j*delx+0.5*delx;
-      FLOAT vel=V_min+i*delv+0.5*delv;
+      FLOAT pos=L_min+j*delx;
+      FLOAT vel=V_min+i*delv;
       arreglo[ndx(i,j)]=rho/(pow(2*pi*sig*sig,0.5))*exp(-pow(vel,2)/(2*sig*sig))*(1+amp*cos(k*pos));
     }
   }
@@ -176,10 +175,10 @@ void potfourier_real(FLOAT *rho, FLOAT *res){
   }
 }
 void acceleration(FLOAT *Va, FLOAT *aceleracion){
-  for(i=1;i<Nx;i++){
-    aceleracion[i]=-(Va[i]-Va[i-1])/delx;
+  for(i=0;i<Nx-1;i++){
+    aceleracion[i]=-(Va[i+1]-Va[i])/delx;
   }
-  aceleracion[0]=-(Va[0]-Va[Nx-1])/delx;
+  aceleracion[Nx-1]=-(Va[0]-Va[Nx-1])/delx;
 }
 void update(FLOAT * fase, FLOAT * azz, FLOAT * fase_new){
   for(i=0;i<Nv;i++){
@@ -190,8 +189,8 @@ void update(FLOAT * fase, FLOAT * azz, FLOAT * fase_new){
 
   for(i=0;i<Nv;i++){
     for(j=0;j<Nx;j++){
-      v=V_min+i*delv;
-      x=L_min+j*delx;
+      v=V_min+i*delv+0.5*delv;
+      x=L_min+j*delx+0.5*delx;
       v_new=v+deltat*azz[j];
       x_new=x+deltat*v_new;
       i_v_new= (int) ((v_new-V_min)/delv);
@@ -274,6 +273,8 @@ void RELAX(){
     densidad(phase, dens);
     potential(dens, pot, pot_temp);
     acceleration(pot, acc);
+
+    dens_vel(phase, vels);
 
     printINFO(k, dens, dens_dat, acc, acc_dat, pot, pot_dat, phase, phase_dat, vels, vels_dat);
 

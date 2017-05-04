@@ -33,9 +33,13 @@ os.mkdir('temp'+metodo)
 
 print len(phase[:,0])/1024
 
+f_min=np.min(phase[0:Nx,:])
+f_max=np.max(phase[0:Nx,:])
+
 for i in range(int(T/skip)):
-    print "El centro de masa esta en x="+str(np.dot(dens[i*Nx:(i+1)*Nx],x))
-    print "El centro de velocidades esta en v="+str(np.dot(vels[i*Nv:(i+1)*Nv],v))
+    print str(i)+ ". El centro de masa esta en x="+str(np.dot(dens[i*Nx:(i+1)*Nx],x)*delx)
+    print str(i)+ ". El centro de velocidades esta en v="+str(np.dot(vels[i*Nv:(i+1)*Nv],v)*delv)
+    print str(i)+ ". La aceleracion neta es a="+str(np.trapz(acc[i*Nx:(i+1)*Nx],x))
 
 with imageio.get_writer('./'+metodo+'.gif', mode='I') as writer:
     for i in range(int(T/skip)):
@@ -66,7 +70,7 @@ with imageio.get_writer('./'+metodo+'.gif', mode='I') as writer:
         plt.xlabel(r'Velocidad ($u.l/u.t.$)')
 
         ax5=fig.add_subplot(gs[:,1:])
-        im=ax5.imshow((phase[i*Nx:(i+1)*Nx,:]), extent=[L_min,L_min+L,V_min,V_min+V], cmap='BuPu', aspect='auto')
+        im=ax5.imshow((phase[i*Nx:(i+1)*Nx,:]), extent=[L_min,L_min+L,V_min,V_min+V], cmap='BuPu', aspect='auto', vmin=f_min, vmax=f_max)
         fig.colorbar(im)
         plt.xlabel(r'Posicion($u.l.$)')
         plt.ylabel(r'Velocidad ($u.l/u.t.$)')
