@@ -22,7 +22,7 @@
 #define FLOAT double
 
 #define T 50
-#define skip 5
+#define skip 3
 #define deltat 0.5
 
 //-------------------------Variables globales-------------------------//
@@ -85,8 +85,9 @@ int main(){
   check(phase); check(phase_new); check(dens); check(acc); check(pot); check(pot_temp); check(vels);
 
   //gauss(phase, phase_new, 0.01, 0.04);
+  gauss(phase, phase_new, 4, 0.08);
   //bullet(phase, phase_new, 0.01, 0.03, -0.4, 0.01, 0.03, 0.4);
-  jeans(phase, phase_new, 0.025, 0.005, 0.5, 2);
+  //jeans(phase, phase_new, 0.025, 0.005, 0.5, 2);
 
   //RELAX();
   FOURIER();
@@ -128,7 +129,7 @@ void densidad(FLOAT *fase, FLOAT *rho){
   for(i=0;i<Nx;i++){
     rho[i]=0.0;
     for(j=0;j<Nv;j++){
-      rho[i]+=fase[ndx(j,i)];
+      rho[i]+=fase[ndx(j,i)]*delv;
     }
   }
 }
@@ -261,7 +262,7 @@ void dens_vel(FLOAT *fase, FLOAT *rho_v){
   for(j=0;j<Nv;j++){
     rho_v[i]=0.0;
     for(i=0;i<Nx;i++){
-      rho_v[i]+=fase[ndx(j,i)];
+      rho_v[i]+=fase[ndx(j,i)]*delx;
     }
   }
 }
