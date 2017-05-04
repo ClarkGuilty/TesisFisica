@@ -22,7 +22,7 @@
 #define FLOAT double
 
 #define T 50
-#define skip 3
+#define skip 10
 #define deltat 0.5
 
 //-------------------------Variables globales-------------------------//
@@ -99,8 +99,8 @@ int main(){
 void gauss(FLOAT *arreglo, FLOAT *arreglo_new, FLOAT amp, FLOAT sigma){
   for(i=0;i<Nv;i++){
     for(j=0;j<Nx;j++){
-      FLOAT pos=L_min+j*delx+0.5*delx;
-      FLOAT vel=V_min+i*delv+0.5*delv;
+      FLOAT pos=L_min+j*delx;
+      FLOAT vel=V_min+i*delv;
       arreglo[ndx(i,j)]=amp*exp(-(pow(pos,2)+pow(vel,2))/sigma);
     }
   }
@@ -190,8 +190,8 @@ void update(FLOAT * fase, FLOAT * azz, FLOAT * fase_new){
 
   for(i=0;i<Nv;i++){
     for(j=0;j<Nx;j++){
-      v=V_min+i*delv+0.5*delv;
-      x=L_min+j*delx+0.5*delx;
+      v=V_min+i*delv;
+      x=L_min+j*delx;
       v_new=v+deltat*azz[j];
       x_new=x+deltat*v_new;
       i_v_new= (int) ((v_new-V_min)/delv);
@@ -260,9 +260,9 @@ void check2(fftw_complex *arreglo){
 }
 void dens_vel(FLOAT *fase, FLOAT *rho_v){
   for(j=0;j<Nv;j++){
-    rho_v[i]=0.0;
+    rho_v[j]=0.0;
     for(i=0;i<Nx;i++){
-      rho_v[i]+=fase[ndx(j,i)]*delx;
+      rho_v[j]+=fase[ndx(j,i)]*delx;
     }
   }
 }
