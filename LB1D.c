@@ -5,12 +5,8 @@
 #include <fftw3.h>
 
 //-------------------------Constantes-------------------------//
-#define Nx 1024
-#define Ny 1024
-#define Nz 1024
-#define Nv 1024
-#define Nu 1024
-#define Nw 1024
+#define Nx 512
+#define Nv 512
 
 #define L 2.0 //1.0
 #define L_min -1.0 // -0.5
@@ -18,20 +14,15 @@
 #define V_min -1.0
 
 #define pi 3.141592654
-#define G 6.67408E-11
 #define FLOAT float
 
 #define T 150
-#define skip 15
-#define deltat 0.5
+#define skip 10
+#define deltat 0.1
 
 //-------------------------Variables globales-------------------------//
 FLOAT delx=L/(Nx);
 FLOAT delv=V/(Nv);
-FLOAT dely=L/(Ny);
-FLOAT delu=V/(Nu);
-FLOAT delz=L/(Nz);
-FLOAT delw=V/(Nw);
 FLOAT L_max = L_min+L;
 FLOAT V_max = V_min+V;
 
@@ -39,7 +30,7 @@ int i,j,k;
 int i_v_new, j_x_new;
 FLOAT x, v, x_new, v_new;
 
-FILE *phase_dat, *dens_dat, *acc_dat, *pot_dat, *vels_dat;
+FILE *phase_rela_dat, *phase_four_dat, *dens_dat, *acc_dat, *pot_dat, *vels_dat;
 FLOAT *phase, *phase_new, *dens, *acc, *pot, *pot_temp, *vels;
 
 FLOAT Kx;
@@ -69,7 +60,6 @@ void RELAX();
 void FOURIER();
 //-------------------------Main-------------------------//
 int main(){
-  phase_dat=fopen("phase_dat.txt", "w");
   dens_dat=fopen("dens_dat.txt", "w");
   acc_dat=fopen("acc_dat.txt", "w");
   pot_dat=fopen("pot_dat.txt", "w");
@@ -84,7 +74,7 @@ int main(){
   vels=malloc(sizeof(FLOAT)*Nv);
   check(phase); check(phase_new); check(dens); check(acc); check(pot); check(pot_temp); check(vels);
 
-  gauss(phase, phase_new, 4, 0.06);
+  gauss(phase, phase_new, 4, 0.08);
   //bullet(phase, phase_new, 0.01, 0.03, -0.4, 0.01, 0.03, 0.4);
   //jeans(phase, phase_new, 0.025, 0.005, 0.5, 2);
 
@@ -266,6 +256,7 @@ void dens_vel(FLOAT *fase, FLOAT *rho_v){
   }
 }
 void RELAX(){
+  phase_rela_dat=fopen("phase_rela_dat.txt", "w");
   method="Relaxation";
   printCONS(method);
   for(k=0;k<T;k++){
@@ -276,12 +267,13 @@ void RELAX(){
 
     dens_vel(phase, vels);
 
-    printINFO(k, dens, dens_dat, acc, acc_dat, pot, pot_dat, phase, phase_dat, vels, vels_dat);
+    printINFO(k, dens, dens_dat, acc, acc_dat, pot, pot_dat, phase, phase_rela_dat, vels, vels_dat);
 
     update(phase, acc, phase_new);
   }
 }
 void FOURIER(){
+  phase_four_dat=fopen("phase_four_dat.txt", "w");
   method="Fourier";
   printCONS(method);
   for(k=0;k<T;k++){
@@ -292,7 +284,7 @@ void FOURIER(){
 
     dens_vel(phase, vels);
 
-    printINFO(k, dens, dens_dat, acc, acc_dat, pot, pot_dat, phase, phase_dat, vels, vels_dat);
+    printINFO(k, dens, dens_dat, acc, acc_dat, pot, pot_dat, phase, phase_four_dat, vels, vels_dat);
 
     update(phase, acc, phase_new);
   }
