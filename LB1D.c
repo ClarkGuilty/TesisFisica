@@ -5,19 +5,19 @@
 #include <fftw3.h>
 
 //-------------------------Constantes-------------------------//
-#define Nx 512
-#define Nv 512
+#define Nx 1024
+#define Nv 1024
 
-#define L 2.0 //1.0
-#define L_min -1.0 // -0.5
+#define L 1.0 //1.0
+#define L_min -0.5 // -0.5
 #define V 2.0
 #define V_min -1.0
 
 #define pi 3.141592654
 #define FLOAT float
 
-#define T 150
-#define skip 10
+#define T 20
+#define skip 1
 #define deltat 0.1
 
 //-------------------------Variables globales-------------------------//
@@ -74,9 +74,10 @@ int main(){
   vels=malloc(sizeof(FLOAT)*Nv);
   check(phase); check(phase_new); check(dens); check(acc); check(pot); check(pot_temp); check(vels);
 
-  gauss(phase, phase_new, 4, 0.08);
-  //bullet(phase, phase_new, 0.01, 0.03, -0.4, 0.01, 0.03, 0.4);
-  //jeans(phase, phase_new, 0.025, 0.005, 0.5, 2);
+  //gauss(phase, phase_new, 3, 0.08);
+  //bullet(phase, phase_new, 5, 0.04, -0.45, 5, 0.04, 0.45);
+  //jeans(phase, phase_new, 0.25, 0.05, 0.5, 2);
+  jeans(phase, phase_new, 10.0, 0.05, 0.5, 2);
 
   //RELAX();
   FOURIER();
@@ -126,7 +127,7 @@ void potential(FLOAT *rho, FLOAT *Va, FLOAT *V_temp){
   for(i=0;i<Nx;i++){
     V_temp[i]=0.0;
   }
-  for(j=0;j<Nx*Nx/4;j++){
+  for(j=0;j<Nx*Nx;j++){
     for(i=1;i<Nx-1;i++){
       Va[i]=0.5*(V_temp[i-1]+V_temp[i+1] - rho[i]*delx*delx);
     }

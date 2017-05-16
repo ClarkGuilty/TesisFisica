@@ -8,4 +8,4 @@ a.out : LB1D.c
 	time gcc -lm -lfftw3 LB1D.c
 
 clean:
-	rm -fr a.out Constantes.txt acc_dat.txt dens_dat.txt pot_dat.txt phase_four_dat.txt phase_rela_dat.txt vels_dat.txt Fourier.gif Relaxation.gif tempFourier/ tempRelajacion/
+	rm -fr a.out Constantes.txt acc_dat.txt dens_dat.txt pot_dat.txt vels_dat.txt Fourier.gif Relaxation.gif phase_four_dat.txt phase_rela_dat.txt tempFourier/ tempRelaxation/

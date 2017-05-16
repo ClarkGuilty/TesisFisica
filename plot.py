@@ -7,7 +7,7 @@ import shutil #Para eliminar directorio temporal
 from matplotlib import gridspec
 import plotly.plotly as py
 
-extra=1
+extra=0
 cons=np.genfromtxt("Constantes.txt")[:,1]
 Nx=int(cons[0])
 Nv=int(cons[1])
@@ -20,7 +20,7 @@ skip=int(cons[7])
 deltat=cons[8]
 metodo=np.genfromtxt("Constantes.txt", dtype="string")[9,1]
 delx=L/(Nx)
-delv=L/(Nx)
+delv=V/(Nv)
 x=np.arange(L_min, L_min+L, delx)
 v=np.arange(V_min, V_min+V, delv)
 
@@ -33,16 +33,24 @@ dens=np.genfromtxt("dens_dat.txt")
 acc=np.genfromtxt("acc_dat.txt")
 pot=np.genfromtxt("pot_dat.txt")
 vels=np.genfromtxt("vels_dat.txt")
+print len(v)
+print len(vels)/Nv
 
 os.mkdir('temp'+metodo)
 
 f_min=np.min(phase[0:Nx,:])
 f_max=np.max(phase[0:Nx,:])
+#god=open('GOD.txt', 'a')
+#god.write("N="+str(Nx) + " " + metodo + "\n")
 
 for i in range(int(T/skip)):
-    print str(i)+ ". El centro de masa esta en x="+str(np.dot(dens[i*Nx:(i+1)*Nx],x)*delx)
-    print str(i)+ ". El centro de velocidades esta en v="+str(np.dot(vels[i*Nv:(i+1)*Nv],v)*delv)
-    print str(i)+ ". La aceleracion neta es a="+str(np.trapz(acc[i*Nx:(i+1)*Nx],x))
+    com=np.dot(dens[i*Nx:(i+1)*Nx],x)*delx
+    cov=np.dot(vels[i*Nv:(i+1)*Nv],v)*delv
+    acc_neta=np.trapz(acc[i*Nx:(i+1)*Nx],x)
+    #god.write(str(com)+ " " + str(cov) + " " + str(acc_neta) + "\n")
+    print str(i)+ ". El centro de masa esta en x="+str(com)
+    print str(i)+ ". El centro de velocidades esta en v="+str(cov)
+    print str(i)+ ". La aceleracion neta es a="+str(acc_neta)
 
 with imageio.get_writer('./'+metodo+'.gif', mode='I') as writer:
     for i in range(int(T/skip)):
@@ -78,7 +86,7 @@ with imageio.get_writer('./'+metodo+'.gif', mode='I') as writer:
         plt.xlabel(r'Posicion($u.l.$)')
 
         ax5=fig.add_subplot(gs[:,1:])
-        im=ax5.imshow(np.transpose((phase[i*Nx:(i+1)*Nx,:])), extent=[L_min,L_min+L,V_min,V_min+V], cmap='BuPu', aspect='auto', vmin=f_min, vmax=f_max)
+        im=ax5.imshow(np.flipud(phase[i*Nx:(i+1)*Nx,:]), extent=[L_min,L_min+L,V_min,V_min+V], cmap='BuPu', aspect='auto', vmin=f_min, vmax=f_max)
         fig.colorbar(im)
         plt.xlabel(r'Posicion ($u.l.$)')
         plt.ylabel(r'Velocidad ($u.l/u.t.$)')
@@ -91,6 +99,8 @@ with imageio.get_writer('./'+metodo+'.gif', mode='I') as writer:
 
         image=imageio.imread('./temp'+metodo+'/'+str(i)+'phase.png')
         writer.append_data(image)
+
+#god.close()
 
 #borra directorio temporal
 #shutil.rmtree('temp')
