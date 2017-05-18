@@ -8,16 +8,16 @@
 #define Nx 1024
 #define Nv 1024
 
-#define L 1.0 //1.0
-#define L_min -0.5 // -0.5
+#define L 2.0 //1.0
+#define L_min -1.0 // -0.5
 #define V 2.0
 #define V_min -1.0
 
 #define pi 3.141592654
 #define FLOAT float
 
-#define T 20
-#define skip 1
+#define T 321
+#define skip 20
 #define deltat 0.1
 
 //-------------------------Variables globales-------------------------//
@@ -74,10 +74,9 @@ int main(){
   vels=malloc(sizeof(FLOAT)*Nv);
   check(phase); check(phase_new); check(dens); check(acc); check(pot); check(pot_temp); check(vels);
 
-  //gauss(phase, phase_new, 3, 0.08);
+  gauss(phase, phase_new, 4, 0.08);
   //bullet(phase, phase_new, 5, 0.04, -0.45, 5, 0.04, 0.45);
-  //jeans(phase, phase_new, 0.25, 0.05, 0.5, 2);
-  jeans(phase, phase_new, 10.0, 0.05, 0.5, 2);
+  //jeans(phase, phase_new, 4.0, 4.0, 0.25, 2);
 
   //RELAX();
   FOURIER();
@@ -166,10 +165,15 @@ void potfourier_real(FLOAT *rho, FLOAT *res){
   }
 }
 void acceleration(FLOAT *Va, FLOAT *aceleracion){
-  for(i=0;i<Nx-1;i++){
+  /*for(i=0;i<Nx-1;i++){
     aceleracion[i]=-(Va[i+1]-Va[i])/delx;
   }
-  aceleracion[Nx-1]=-(Va[0]-Va[Nx-1])/delx;
+  aceleracion[Nx-1]=-(Va[0]-Va[Nx-1])/delx;*/
+  for(i=1;i<Nx-1;i++){
+    aceleracion[i]=-(Va[i+1]-Va[i-1])/(2*delx);
+  }
+  aceleracion[0]=-(Va[1]-Va[Nx-1])/(2*delx);
+  aceleracion[Nx-1]=-(Va[0]-Va[Nx-2])/(2*delx);
 }
 void update(FLOAT * fase, FLOAT * azz, FLOAT * fase_new){
   for(i=0;i<Nv;i++){
